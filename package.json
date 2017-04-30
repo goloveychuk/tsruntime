@@ -1,0 +1,15 @@
+{
+  "name": "tsruntime",
+  "version": "1.0.0",
+  "main": "dist/entry.js",
+  "typings": "./dist/index.d.ts",
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "rimraf dist && tsc --pretty"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "rimraf": "^2.6.1",
+    "typescript": "^2.3.0"
+  }
+}
