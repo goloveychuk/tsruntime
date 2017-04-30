@@ -1,7 +1,7 @@
 {
   "name": "tsruntime",
   "version": "1.0.0",
-  "main": "dist/entry.js",
+  "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
   "scripts": {
     "prepublish": "npm run build",
@@ -9,6 +9,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "reflect-metadata": "^0.1.10",
     "rimraf": "^2.6.1",
     "typescript": "^2.3.0"
   }

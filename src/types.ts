@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 
 export module Types {
 
