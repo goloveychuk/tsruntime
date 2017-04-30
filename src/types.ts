@@ -10,11 +10,12 @@ export module Types {
     Undefined = 5,
     Reference = 6,
     Union = 7,
+    Class = 8
   }
 
 
 
-  export type Type =  StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
+  export type Type =  ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
 
   
 
@@ -49,7 +50,14 @@ export module Types {
     arguments: Type[]
   }
 
+  export interface ClassType {
+    kind: TypeKind.Class
+    props: string[]
+    extends?: Types.Type
+  }
+
 }
+
 
 export function Reflective(target: any) {
 

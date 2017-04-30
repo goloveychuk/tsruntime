@@ -24,11 +24,24 @@ module Serializer {
         assigns.push(ts.createPropertyAssignment("type", type.type))
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         break
+      case Types.TypeKind.Class:
+        assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(ts.createLiteral))))
+        if (type.extends !== undefined) {
+          assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
+        }
+        break
     }
     return ts.createObjectLiteral(assigns)
   }
 
-
+  function serializeExpressionWithArgs(type: ts.ExpressionWithTypeArguments): Types.Type {
+    const typeArgs = type.typeArguments;
+    let allTypes: Types.Type[] = [];
+    if (typeArgs !== undefined) {
+      allTypes = typeArgs.map(t => serializePropType(t))
+    }
+    return { kind: Types.TypeKind.Reference, arguments: allTypes, type: type.expression }
+  }
 
   function serializeReference(type: ts.TypeReferenceNode): Types.Type {
     const typeArgs = type.typeArguments;
@@ -48,6 +61,8 @@ module Serializer {
     switch (type.kind) {
       case ts.SyntaxKind.TypeReference:
         return serializeReference(<ts.TypeReferenceNode>type)
+      case ts.SyntaxKind.ExpressionWithTypeArguments:
+        return serializeExpressionWithArgs(<ts.ExpressionWithTypeArguments>type)
       case ts.SyntaxKind.UnionType:
         return serializeUnion(<ts.UnionTypeNode>type)
       case ts.SyntaxKind.NumberKeyword:
@@ -127,14 +142,38 @@ function Transformer(context: ts.TransformationContext) {
     return false
   }
 
+  function getClassType(node: ts2.ClassDeclaration) {
+    let extendsCls: Types.Type | undefined;
+    if (node.heritageClauses !== undefined) {
+      for (const clause of node.heritageClauses) {
+        if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
+          if (clause.types.length != 1) {
+            throw new Error(`extend clause should have exactly one type, ${clause.types}`)
+          }
+          extendsCls = Serializer.serializePropType(clause.types[0])
+        }
+      }
+    }
+    const props: string[] = []
+    node.forEachChild(ch => {
+      if (ch.kind == ts.SyntaxKind.PropertyDeclaration) {
+        props.push((<ts.PropertyDeclaration>ch).name.getText())
+      }
+    })
+    const classType: Types.ClassType = {props, kind: Types.TypeKind.Class, extends: extendsCls}
+    return Serializer.makeLiteral(classType)
+  }
+
   function visitClassDeclaration(node: ts2.ClassDeclaration) {
     if (!shouldReflect(node)) {
       return node
     }
+    const newNode = ts.getMutableClone(node);
+
     const newMembers = ts.visitNodes(node.members, visitClassMember);
-    let newNode = ts.getMutableClone(node);
-    // newNode.decorators = newDecorators
+    const classTypeExp = getClassType(node)
     newNode.members = newMembers
+    newNode.decorators = addDecorator(node, classTypeExp)
     return newNode
   }
 
