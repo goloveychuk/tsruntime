@@ -95,10 +95,10 @@ module ts2 {
 
 function Transformer(context: ts.TransformationContext) {
   function addDecorator(node: ts.Node, exp: ts.Expression) {
-    if (node.decorators === undefined) {
-      return undefined
+    const newDecorators = ts.createNodeArray<ts.Decorator>()
+    if (node.decorators !== undefined) {
+      newDecorators.concat(node.decorators)
     }
-    let newDecorators = ts.createNodeArray(node.decorators.concat())
     const decCall = ts.createCall(ts.createIdentifier('Reflect.metadata'), undefined, [ts.createLiteral(MetadataKey), exp])
     const dec = ts.createDecorator(decCall)
     newDecorators.push(dec)

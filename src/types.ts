@@ -63,7 +63,7 @@ export function Reflective(target: any) {
 
 }
 
-export const MetadataKey = "typscript-reflect:type"
+export const MetadataKey = "tsruntime:type"
 
 
 export function getType(target: Object, propertyKey?: string | symbol): Types.Type | undefined {
