@@ -66,6 +66,11 @@ export function Reflective(target: any) {
 export const MetadataKey = "typscript-reflect:type"
 
 
-export function getType(target: Object, propertyKey: string | symbol): Types.Type | undefined {
-  return Reflect.getMetadata(MetadataKey, target, propertyKey)
+export function getType(target: Object, propertyKey?: string | symbol): Types.Type | undefined {
+  if (propertyKey !== undefined) {
+    return Reflect.getMetadata(MetadataKey, target, propertyKey)
+    
+  } else {
+    return Reflect.getMetadata(MetadataKey, target)
+  }
 }
