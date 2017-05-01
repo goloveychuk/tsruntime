@@ -8,8 +8,11 @@ module Serializer {
 
 
   export function makeLiteral(type: Types.Type) {
-    const assigns = [ts.createPropertyAssignment("kind", ts.createLiteral(type.kind))]
-
+    const assigns = []
+    assigns.push(ts.createPropertyAssignment("kind", ts.createLiteral(type.kind)))
+    if (type.initializer !== undefined) {
+      assigns.push(ts.createPropertyAssignment("initializer", type.initializer))
+    }
     switch (type.kind) {
       case Types.TypeKind.Boolean:
       case Types.TypeKind.Number:
@@ -75,6 +78,8 @@ module Serializer {
         return { kind: Types.TypeKind.Undefined }
       case ts.SyntaxKind.NullKeyword:
         return { kind: Types.TypeKind.Null }
+      case ts.SyntaxKind.ArrayType: //todo test
+        return { kind: Types.TypeKind.Array }
       default:
         throw new Error(`unknown type: ${type}`)
     }
@@ -94,10 +99,10 @@ module ts2 {
 
 
 function Transformer(context: ts.TransformationContext) {
-  function addDecorator(node: ts.Node, exp: ts.Expression) {
-    const newDecorators = ts.createNodeArray<ts.Decorator>()
-    if (node.decorators !== undefined) {
-      newDecorators.concat(node.decorators)
+  function addDecorator(oldDecorators: ts.NodeArray<ts.Decorator> | undefined, exp: ts.Expression) {
+    let newDecorators = ts.createNodeArray<ts.Decorator>()
+    if (oldDecorators !== undefined) {
+      newDecorators.push(...oldDecorators)
     }
     const decCall = ts.createCall(ts.createIdentifier('Reflect.metadata'), undefined, [ts.createLiteral(MetadataKey), exp])
     const dec = ts.createDecorator(decCall)
@@ -109,12 +114,17 @@ function Transformer(context: ts.TransformationContext) {
     if (node.type === undefined) {
       return node
     }
+    let initializerExp;
+    if (node.initializer !== undefined) {
+      initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
+    }
     let serializedType = Serializer.serializePropType(node.type)
     if (node.questionToken !== undefined) {
       serializedType = { kind: Types.TypeKind.Union, types: [serializedType, { kind: Types.TypeKind.Undefined }] }
     }
+    serializedType.initializer = initializerExp
     const objLiteral = Serializer.makeLiteral(serializedType)
-    const newDecorators = addDecorator(node, objLiteral)
+    const newDecorators = addDecorator(node.decorators, objLiteral)
     let newNode = ts.getMutableClone(node);
     newNode.decorators = newDecorators
     return newNode
@@ -160,7 +170,7 @@ function Transformer(context: ts.TransformationContext) {
         props.push((<ts.PropertyDeclaration>ch).name.getText())
       }
     })
-    const classType: Types.ClassType = {props, kind: Types.TypeKind.Class, extends: extendsCls}
+    const classType: Types.ClassType = { props, kind: Types.TypeKind.Class, extends: extendsCls }
     return Serializer.makeLiteral(classType)
   }
 
@@ -173,7 +183,7 @@ function Transformer(context: ts.TransformationContext) {
     const newMembers = ts.visitNodes(node.members, visitClassMember);
     const classTypeExp = getClassType(node)
     newNode.members = newMembers
-    newNode.decorators = addDecorator(node, classTypeExp)
+    newNode.decorators = addDecorator(node.decorators, classTypeExp)
     return newNode
   }
 
@@ -205,13 +215,8 @@ function Transformer(context: ts.TransformationContext) {
 
 
 
-function TranformerFactory(context: ts.TransformationContext) {
-  const tran = Transformer(context)
-  return tran;
-}
-
 export default function (): ts.CustomTransformers {
-  return {
-    before: [TranformerFactory]
+  return { //todo program
+    before: [(context: ts.TransformationContext) => Transformer(context)]
   }
 }

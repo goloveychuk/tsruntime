@@ -8,49 +8,61 @@ export module Types {
     Boolean = 3,
     Null = 4,
     Undefined = 5,
-    Reference = 6,
-    Union = 7,
-    Class = 8
+    Array = 6,
+    Object = 7,
+    Reference = 8,
+    Union = 9,
+    Class = 10
   }
 
 
 
-  export type Type =  ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
+  export type Type =  ArrayType | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
 
-  
+  export interface BaseType {
+    kind: TypeKind
+    initializer?: any //todo
+  }
 
-  export interface StringType {
+  export interface StringType extends BaseType {
     kind: TypeKind.String
   }
 
-  export interface NumberType {
+  export interface NumberType extends BaseType {
     kind: TypeKind.Number
   }
 
-  export interface BooleanType {
+  export interface BooleanType extends BaseType {
     kind: TypeKind.Boolean
   }
 
-  export interface NullType {
+  export interface NullType extends BaseType {
     kind: TypeKind.Null
   }
 
-  export interface UndefinedType {
+  export interface UndefinedType extends BaseType {
     kind: TypeKind.Undefined
   }
 
+  export interface ArrayType extends BaseType {
+    kind: TypeKind.Array
+  }
 
-  export interface UnionType {
+  export interface ObjectType extends BaseType {
+    kind: TypeKind.Object
+  }
+
+  export interface UnionType extends BaseType {
     kind: TypeKind.Union
     types: Type[]
   }
-  export interface ReferenceType {
+  export interface ReferenceType extends BaseType {
     kind: TypeKind.Reference
     type: any
     arguments: Type[]
   }
 
-  export interface ClassType {
+  export interface ClassType extends BaseType {
     kind: TypeKind.Class
     props: string[]
     extends?: Types.Type
@@ -66,11 +78,15 @@ export function Reflective(target: any) {
 export const MetadataKey = "tsruntime:type"
 
 
-export function getType(target: Object, propertyKey?: string | symbol): Types.Type | undefined {
-  if (propertyKey !== undefined) {
-    return Reflect.getMetadata(MetadataKey, target, propertyKey)
-    
+export function getType(target: Object, propertyKey?: string | symbol): Types.Type {
+  let t;
+  if (propertyKey === undefined) {
+    t = Reflect.getMetadata(MetadataKey, target)
   } else {
-    return Reflect.getMetadata(MetadataKey, target)
+    t = Reflect.getMetadata(MetadataKey, target, propertyKey)
   }
+  if (t === undefined) {
+    throw new Error(`target is not reflective, ${target}, propKey: ${propertyKey}`)
+  }
+  return t
 }
