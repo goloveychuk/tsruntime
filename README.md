@@ -1,8 +1,9 @@
 # tsruntime
 
-Library for emitting metadata for classes
+Library for emitting metadata for classes, using latest `customTransformers` api.
 
 ## Installation
+0) install 2.3.0+ `typescript` and 3.1.3+ `awesome-typescript-laoder`
 1) `npm i tsruntime`
 2) configure awesome-typescript-loader:
 ```
