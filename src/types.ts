@@ -22,6 +22,7 @@ export module Types {
   export interface BaseType {
     kind: TypeKind
     initializer?: any //todo
+    optional?: boolean
   }
 
   export interface StringType extends BaseType {
@@ -79,14 +80,17 @@ export const MetadataKey = "tsruntime:type"
 
 
 export function getType(target: Object, propertyKey?: string | symbol): Types.Type {
-  let t;
-  if (propertyKey === undefined) {
-    t = Reflect.getMetadata(MetadataKey, target)
-  } else {
-    t = Reflect.getMetadata(MetadataKey, target, propertyKey)
-  }
+  let t = maybeGetType(target, propertyKey)
   if (t === undefined) {
     throw new Error(`target is not reflective, ${target}, propKey: ${propertyKey}`)
   }
   return t
+}
+
+export function maybeGetType(target: Object, propertyKey?: string | symbol): Types.Type | undefined {
+  if (propertyKey === undefined) {
+    return Reflect.getMetadata(MetadataKey, target)
+  } else {
+    return Reflect.getMetadata(MetadataKey, target, propertyKey)
+  }
 }

@@ -13,6 +13,9 @@ module Serializer {
     if (type.initializer !== undefined) {
       assigns.push(ts.createPropertyAssignment("initializer", type.initializer))
     }
+    if (type.optional !== undefined) {
+      assigns.push(ts.createPropertyAssignment("optional", ts.createLiteral(type.optional)))
+    }
     switch (type.kind) {
       case Types.TypeKind.Boolean:
       case Types.TypeKind.Number:
@@ -119,9 +122,7 @@ function Transformer(context: ts.TransformationContext) {
       initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
     }
     let serializedType = Serializer.serializePropType(node.type)
-    if (node.questionToken !== undefined) {
-      serializedType = { kind: Types.TypeKind.Union, types: [serializedType, { kind: Types.TypeKind.Undefined }] }
-    }
+    serializedType.optional = node.questionToken !== undefined
     serializedType.initializer = initializerExp
     const objLiteral = Serializer.makeLiteral(serializedType)
     const newDecorators = addDecorator(node.decorators, objLiteral)
@@ -196,14 +197,14 @@ function Transformer(context: ts.TransformationContext) {
     }
   }
 
-  function transform(source: ts2.SourceFile): ts2.SourceFile {
+  function transform(sourceI: ts.SourceFile): ts.SourceFile {
+    const source = sourceI as ts2.SourceFile
     if (source.isDeclarationFile) {
       return source
     }
     // const newStatements = ts.visitLexicalEnvironment(source.statements, visitor, context)
     // const newNode = ts.updateSourceFileNode(source, ts.setTextRange(newStatements, source.statements))
     const newNode = ts.visitEachChild(source, visitor, context);
-
     newNode.symbol = source.symbol;
     return newNode
 
@@ -211,12 +212,4 @@ function Transformer(context: ts.TransformationContext) {
   return transform
 }
 
-
-
-
-
-export default function (): ts.CustomTransformers {
-  return { //todo program
-    before: [(context: ts.TransformationContext) => Transformer(context)]
-  }
-}
+export default Transformer;
