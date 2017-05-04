@@ -1,14 +1,23 @@
 # tsruntime
 
+# NOTE! This is very very beginning and just proof of concept, many emitting cases are ignored for now.
 Library for emitting metadata for classes, using latest `customTransformers` api.
 
 ## Installation
 0) install 2.3.0+ `typescript` and 3.1.3+ `awesome-typescript-laoder`
 1) `npm i tsruntime`
-2) configure awesome-typescript-loader:
-```
-const getCustomTransformers = require('tsruntime/dist/transformer').default;
+2) for now remove `new CheckerPlugin()`, since it fork `Checker` and it's impossibble to pass function as options.
+   see https://github.com/s-panferov/awesome-typescript-loader/pull/423
+3) configure awesome-typescript-loader
 
+```js
+const tsRuntimeTransformer = require('tsruntime/dist/transformer').default;
+function getCustomTransformers() {
+  return { 
+     before: [tsRuntimeTransformer]
+  }
+}
+//...
 {
   loader: 'awesome-typescript-loader',
   options: {
