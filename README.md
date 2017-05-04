@@ -1,6 +1,6 @@
 # tsruntime
 
-# NOTE! This is very very beginning and just proof of concept, many emitting cases are ignored for now.
+## NOTE! This is very very beginning and just proof of concept, many emitting cases are ignored for now.
 Library for emitting metadata for classes, using latest `customTransformers` api.
 
 ## Installation
