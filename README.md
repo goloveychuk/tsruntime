@@ -51,7 +51,7 @@ import {Types, getType} from 'tsruntime';
 
 const clsType = getType(Foo)
 console.log(clsType.props, clsType.extends);
-const dType = getType(StatsModel, "d")
+const dType = getType(StatsModel.prototype, "d")
 ```
 3) what info available - https://github.com/goloveychuk/tsruntime/blob/master/src/types.ts#L22
 
