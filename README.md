@@ -13,8 +13,8 @@ Library for emitting metadata for classes, using latest `customTransformers` api
 ```js
 const tsRuntimeTransformer = require('tsruntime/dist/transformer').default;
 function getCustomTransformers() {
-  return { 
-     before: [tsRuntimeTransformer]
+  return {
+     before: [tsRuntimeTransformer()]
   }
 }
 //...
@@ -25,6 +25,25 @@ function getCustomTransformers() {
   }
 }
 ```
+
+### Transformer Options
+
+Configuration options can be passed to the transformer to change it's behavior. Supported options include:
+
+  * decoratorNames: string[] - If a class has a decorator named in this list, then it will have tsruntime data attached.  default: ['Reflective']
+
+Options should be passed using an options object.
+
+```js
+function getCustomTransformers() {
+  return {
+     before: [tsRuntimeTransformer({
+        decoratorNames: ['CustomDecorator', 'Reflective']
+     })]
+  }
+}
+```
+
 ## Usage:
 1) decorate classes you want to reflect with proper decorator
 ```ts
@@ -36,11 +55,11 @@ export class StatsModel {
     b: string
     c: Array<string>
     d: number | string | null
-}  
+}
 
 @Reflective
 class Foo extends Array<string> {
-  
+
 }
 
 ```
