@@ -98,7 +98,23 @@ module ts2 {
 
 }
 
+/**
+ * Configuration settings for the transformer.
+ */
+export interface IConfig {
+  /** List of decorator names that mark classes to attach runtime data. */
+  decoratorNames?: string[]
+}
 
+class TransformConfig {
+  decoratorNames: string[] = ['Reflective'];
+
+  applyConfig(config: IConfig) {
+    this.decoratorNames = config.decoratorNames || this.decoratorNames;
+  }
+}
+
+const transformConfig: TransformConfig = new TransformConfig();
 
 
 function Transformer(context: ts.TransformationContext) {
@@ -145,7 +161,7 @@ function Transformer(context: ts.TransformationContext) {
     }
     for (const dec of node.decorators) {
       if (dec.kind == ts.SyntaxKind.Decorator) {
-        if (dec.expression.getText() == 'Reflective') {
+        if (transformConfig.decoratorNames.indexOf(dec.expression.getText()) != -1) {
           return true
         }
       }
@@ -207,9 +223,20 @@ function Transformer(context: ts.TransformationContext) {
     const newNode = ts.visitEachChild(source, visitor, context);
     newNode.symbol = source.symbol;
     return newNode
-
   }
-  return transform
+
+  return transform;
 }
 
-export default Transformer;
+
+/**
+ * Build and return a transformer.
+ */
+export function buildTransformer(config?: IConfig): (c: ts.TransformationContext) => void {
+  if (config != undefined) {
+    transformConfig.applyConfig(config);
+  }
+  return Transformer;
+}
+
+export default buildTransformer;
