@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "files": ["start.ts"],
+  "compilerOptions": {
+      "outDir": "./build",
+      "declaration": false,
+      "strict": true
+  }
+}

@@ -3,21 +3,34 @@ import 'reflect-metadata';
 export module Types {
 
   export enum TypeKind {
-    String = 1,
-    Number = 2,
-    Boolean = 3,
-    Null = 4,
-    Undefined = 5,
-    Array = 6,
-    Object = 7,
-    Reference = 8,
-    Union = 9,
-    Class = 10
+    Any = 1,
+    String,
+    Number,
+    Boolean,
+    Enum,
+    StringLiteral,
+    NumberLiteral,
+    BooleanLiteral,
+    EnumLiteral,
+    ESSymbol,
+    Void,
+    Undefined,
+    Null,
+    Never,
+    
+    Array,
+    Object,
+    
+    Tuple,
+    Union,
+    Reference,
+    Class
   }
 
 
 
-  export type Type =  ArrayType | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
+
+  export type Type = TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType | ArrayType | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
 
   export interface BaseType {
     kind: TypeKind
@@ -32,7 +45,9 @@ export module Types {
   export interface NumberType extends BaseType {
     kind: TypeKind.Number
   }
-
+  export interface TupleType extends BaseType {
+    kind: TypeKind.Tuple
+  }
   export interface BooleanType extends BaseType {
     kind: TypeKind.Boolean
   }
@@ -45,6 +60,21 @@ export module Types {
     kind: TypeKind.Undefined
   }
 
+  export interface EnumType extends BaseType {
+    kind: TypeKind.Enum
+  }
+  export interface ESSymbolType extends BaseType {
+    kind: TypeKind.ESSymbol
+  }
+  export interface VoidType extends BaseType {
+    kind: TypeKind.Void
+  }
+  export interface NeverType extends BaseType {
+    kind: TypeKind.Never
+  }
+  export interface AnyType extends BaseType {
+    kind: TypeKind.Any
+  }
   export interface ArrayType extends BaseType {
     kind: TypeKind.Array
   }
@@ -71,10 +101,19 @@ export module Types {
 
 }
 
+const ReflectiveSymb = Symbol("reflectiveSymb")
 
 export function Reflective(target: any) {
 
 }
+
+Reflectify(Reflective)
+
+export function Reflectify(constr: Function) {
+  constr.prototype[ReflectiveSymb] = true
+}
+
+Reflective.prototype
 
 export const MetadataKey = "tsruntime:type"
 

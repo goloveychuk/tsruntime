@@ -5,7 +5,8 @@
   "typings": "./dist/index.d.ts",
   "scripts": {
     "prepublish": "npm run build",
-    "build": "rimraf dist && tsc --pretty"
+    "build": "rimraf dist && tsc --pretty",
+    "build-tests": "rimraf ./tests/build && tsc -p ./tests"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   "homepage": "https://github.com/goloveychuk/tsruntime",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^7.0.18",
     "reflect-metadata": "^0.1.10",
     "rimraf": "^2.6.1",
     "typescript": "^2.3.0"
