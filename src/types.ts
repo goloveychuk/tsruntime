@@ -18,7 +18,6 @@ export module Types {
     Null,
     Never,
     
-    Array,
     Object,
     
     Tuple,
@@ -30,7 +29,7 @@ export module Types {
 
 
 
-  export type Type = TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType | ArrayType | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
+  export type Type = TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType  | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
 
   export interface BaseType {
     kind: TypeKind
@@ -47,6 +46,7 @@ export module Types {
   }
   export interface TupleType extends BaseType {
     kind: TypeKind.Tuple
+    elementTypes: Type[]
   }
   export interface BooleanType extends BaseType {
     kind: TypeKind.Boolean
@@ -75,9 +75,7 @@ export module Types {
   export interface AnyType extends BaseType {
     kind: TypeKind.Any
   }
-  export interface ArrayType extends BaseType {
-    kind: TypeKind.Array
-  }
+
 
   export interface ObjectType extends BaseType {
     kind: TypeKind.Object

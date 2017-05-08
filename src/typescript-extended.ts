@@ -40,9 +40,17 @@ export interface Node {
     symbol?: ts.Symbol
     original?: ts.Node
 }
+export interface Identifier extends ts.Identifier, Node {
+
+}
 export interface ClassDeclaration extends ts.ClassDeclaration, Node { }
 export interface SourceFile extends ts.SourceFile, Node { }
 export interface PropertyDeclaration extends ts.PropertyDeclaration, Node { }
 export interface TransformationContext extends ts.TransformationContext {
     getEmitResolver(): EmitResolver
 }
+
+// export interface NewCallExpression {
+//     expression: ts.LeftHandSideExpression;
+//     typeArguments?: ts.NodeArray<ts.TypeNode>;
+// }
