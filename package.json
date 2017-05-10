@@ -6,7 +6,7 @@
   "scripts": {
     "prepublish": "npm run build",
     "build": "rimraf dist && tsc --pretty",
-    "test": "karma start",
+    "test": "npm run build && karma start",
     "watch": "rimraf dist && tsc --watch --pretty",
     "watch:test": "npm run test -- --auto-watch --no-single-run"
   },
