@@ -200,7 +200,12 @@ function Transformer(context: ts.TransformationContext) {
     }
     for (const dec of node.decorators) {
       if (dec.kind == ts.SyntaxKind.Decorator) {
-        if (transformConfig.decoratorNames.indexOf(dec.expression.getText()) != -1) {
+        // Find decorator name. If decorator is called as function, then name is at first child.
+        const dec_name = (dec.expression.getChildCount() === 0) ?
+                          dec.expression.getText() :
+                          dec.expression.getChildAt(0).getText();
+
+        if (transformConfig.decoratorNames.indexOf(dec_name) != -1) {
           return true
         }
       }
