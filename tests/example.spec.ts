@@ -2,6 +2,7 @@ import {
    Reflective,
    Types,
    getType,
+   getPropType
 } from '../src';
 
 const TypeKind = Types.TypeKind;
@@ -37,7 +38,7 @@ describe('Example works', () => {
       const stats_type = getType(StatsModel) as Types.ClassType;
       expect(stats_type.props).toEqual(['a', 'b', 'c', 'd']);
 
-      const dType = getType(StatsModel.prototype, "d")
+      const dType = getPropType(StatsModel, "d")
       expect(dType).not.toBeNull();
       expect(dType.kind).toEqual(TypeKind.Union);
    });

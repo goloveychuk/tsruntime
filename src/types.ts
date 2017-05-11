@@ -99,35 +99,38 @@ export module Types {
 
 }
 
-const ReflectiveSymb = Symbol("reflectiveSymb")
-
 export function Reflective(target: any) {
 
 }
 
-Reflectify(Reflective)
-
-export function Reflectify(constr: Function) {
-  constr.prototype[ReflectiveSymb] = true
-}
-
-Reflective.prototype
 
 export const MetadataKey = "tsruntime:type"
 
 
-export function getType(target: Object, propertyKey?: string | symbol): Types.Type {
-  let t = maybeGetType(target, propertyKey)
-  if (t === undefined) {
-    throw new Error(`target is not reflective, ${target}, propKey: ${propertyKey}`)
-  }
-  return t
+export function getType(target: Function): Types.Type | undefined {
+  return Reflect.getMetadata(MetadataKey, target)
 }
 
-export function maybeGetType(target: Object, propertyKey?: string | symbol): Types.Type | undefined {
-  if (propertyKey === undefined) {
-    return Reflect.getMetadata(MetadataKey, target)
-  } else {
-    return Reflect.getMetadata(MetadataKey, target, propertyKey)
+export function mustGetType(target: Function): Types.Type {
+  const type = getType(target)
+  if (type === undefined) {
+    throw new Error("can't find type")
   }
+  return type
+}
+
+
+
+export function mustGetPropType(target: Function, propertyKey: string | symbol): Types.Type {
+  const type = getPropType(target, propertyKey)
+  if (type === undefined) {
+    throw new Error("can't find prop type")
+  }
+  return type
+}
+
+
+
+export function getPropType(target: Function, propertyKey: string | symbol) {
+  return Reflect.getMetadata(MetadataKey, target.prototype, propertyKey)
 }

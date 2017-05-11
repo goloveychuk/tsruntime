@@ -13,7 +13,7 @@ export function unwrap<T>(v: T | undefined, msg?: string) {
 
 
 
-function Transformer(context: tse.TransformationContext) {
+function Transformer(context: ts.TransformationContext) {
   function makeLiteral(type: Types.Type) {
     const assigns = []
     assigns.push(ts.createPropertyAssignment("kind", ts.createLiteral(type.kind)))
@@ -210,16 +210,16 @@ function Transformer(context: tse.TransformationContext) {
 
   function getClassType(node: tse.ClassDeclaration) {
     let extendsCls: Types.Type | undefined;
-    // if (node.heritageClauses !== undefined) {
-    //   for (const clause of node.heritageClauses) {
-    //     if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
-    //       if (clause.types.length != 1) {
-    //         throw new Error(`extend clause should have exactly one type, ${clause.types}`)
-    //       }
-    //       extendsCls = serializePropType(clause.types[0])
-    //     }
-    //   }
-    // }
+    if (node.heritageClauses !== undefined) {
+      for (const clause of node.heritageClauses) {
+        if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
+          if (clause.types.length != 1) {
+            throw new Error(`extend clause should have exactly one type, ${clause.types}`)
+          }
+          extendsCls = serializePropType(clause.types[0])
+        }
+      }
+    }
     const props: string[] = []
     node.forEachChild(ch => {
       if (ch.kind == ts.SyntaxKind.PropertyDeclaration) {
@@ -268,8 +268,6 @@ function Transformer(context: tse.TransformationContext) {
     if (source.isDeclarationFile) {
       return source
     }
-    // const newStatements = ts.visitLexicalEnvironment(source.statements, visitor, context)
-    // const newNode = ts.updateSourceFileNode(source, ts.setTextRange(newStatements, source.statements))
     onBeforeVisitNode(source)
     const newNode = ts.visitEachChild(source, visitor, context);
     newNode.symbol = source.symbol;
@@ -299,7 +297,7 @@ const transformConfig: TransformConfig = new TransformConfig();
 
 
 
-export default function TransformerFactory(config?: IConfig) {
+export default function TransformerFactory(config?: IConfig): ts.TransformerFactory<ts.SourceFile> {
   if (config != undefined) {
     transformConfig.applyConfig(config);
   }

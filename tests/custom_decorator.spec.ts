@@ -1,5 +1,6 @@
 import {
    getType,
+   mustGetType
 } from '../src';
 
 
@@ -26,7 +27,7 @@ describe('Custom Decorators', () => {
 
    it('should throw on non-decorated', () => {
       expect(() => {
-          getType(MyClassB);
+          mustGetType(MyClassB);
       }).toThrow();
    });
 

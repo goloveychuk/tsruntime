@@ -1,7 +1,11 @@
-import {Mod} from './mod'
-import {Reflective} from '../src/types'
+
+import {Reflective, getType, getPropType, Types} from '../src/types'
 
 class GenericCls<T> {
+
+}
+
+class Cls {
 
 }
 
@@ -32,11 +36,12 @@ class AllTypes {
     refNumber: Number
     refDate: Date
 
-    ref: Mod
+    ref: Cls
     genRef: GenericCls<string>
 
     optional?: String
 }
+
 @Reflective
 class DerrivedTypes {
     string = "string"
@@ -48,10 +53,25 @@ class DerrivedTypes {
     undefined = undefined
 
     refArray = Array<string>()
-    ref = new Mod()
+    ref = new Cls()
     genRef = new GenericCls<string>()
 }
 
 
 
 // a.a = null
+
+
+
+
+
+
+
+
+describe('All types', () => {
+   it('number', () => {
+      const clsType = getPropType(AllTypes, "string") as Types.StringType;
+      expect(clsType.kind).toBe(Types.TypeKind.String)
+   });
+});
+
