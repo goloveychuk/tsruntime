@@ -57,6 +57,11 @@ class DerrivedTypes {
     genRef = new GenericCls<string>()
 }
 
+@Reflective
+class UnionTypes {
+    string_null: string | null = '';
+    string_undefined: string | undefined;
+}
 
 
 // a.a = null
@@ -100,6 +105,20 @@ describe('All types', () => {
    it('symbol', () => {
       const clsType = getPropType(AllTypes, "symbol") as Types.ESSymbolType;
       expect(clsType.kind).toBe(Types.TypeKind.ESSymbol)
+   });
+
+   describe('union types', () => {
+      it('string | null', () => {
+          const type = getPropType(UnionTypes, "string_null") as Types.UnionType;
+          expect(type.types[0].kind).toBe(Types.TypeKind.String);
+          expect(type.types[1].kind).toBe(Types.TypeKind.Null);
+      });
+
+      it('string | undefined', () => {
+          const type = getPropType(UnionTypes, "string_undefined") as Types.UnionType;
+          expect(type.types[0].kind).toBe(Types.TypeKind.String);
+          expect(type.types[1].kind).toBe(Types.TypeKind.Undefined);
+      });
    });
 });
 
