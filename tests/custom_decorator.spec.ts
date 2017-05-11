@@ -4,7 +4,11 @@ import {
 } from '../src';
 
 
-function UserDecorator(target: any) { }
+function UserDecorator(target: any) {
+    // Verifies that tsruntime decorations are
+    // available before user decorator is applied.
+    const clsType = mustGetType(target);
+}
 
 function OtherDecorator(target: any) { }
 
