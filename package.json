@@ -8,7 +8,7 @@
     "build": "rimraf dist && tsc --pretty",
     "test": "npm run build && karma start",
     "watch": "rimraf dist && tsc --watch --pretty",
-    "watch:test": "npm run test -- --auto-watch --no-single-run"
+    "watch:test": "npm run test -- --auto-watch --no-single-run",
     "build:test": "rimraf ./tests/build && tsc -p ./tests"
   },
   "repository": {

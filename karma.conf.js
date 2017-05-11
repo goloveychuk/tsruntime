@@ -10,11 +10,11 @@ module.exports = function(config) {
     exclude: [ ],
 
     files: [
-       { pattern: 'test/spec-bundle.js', watched: false }
+       { pattern: 'tests/spec-bundle.js', watched: false }
     ],
 
     preprocessors: {
-       'test/spec-bundle.js': ['webpack']
+       'tests/spec-bundle.js': ['webpack']
     },
 
     // webpack setup
