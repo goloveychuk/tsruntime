@@ -42,5 +42,16 @@ describe('Missing Support', () => {
       expect(children_type.arguments[0].kind).toBe(Types.TypeKind.Unknown);
    });
 
+   it('should work nested', () => {
+      @Reflective
+      class InnerClass {
+          a: string;
+      }
+
+      const clsType = getType(InnerClass);
+      // SHOULD WORK
+      //expect(clsType).toBeDefined();
+   });
+
 });
 
