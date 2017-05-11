@@ -14,6 +14,13 @@ export function unwrap<T>(v: T | undefined, msg?: string) {
 
 
 function Transformer(context: ts.TransformationContext) {
+  function showWarning(node: ts.Node, msg: string) {
+    const fname = node.getSourceFile().fileName;
+    const location = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart());
+    const node_text = node.getText();
+    console.warn(`\n\ntsruntime: ${msg}: ${fname} ${location.line}:${location.character}: ${node_text}\n`);
+  }
+
   function makeLiteral(type: Types.Type) {
     const assigns = []
     assigns.push(ts.createPropertyAssignment("kind", ts.createLiteral(type.kind)))
@@ -62,7 +69,8 @@ function Transformer(context: ts.TransformationContext) {
 
   function serializeReference(type: ts.TypeReferenceNode): Types.Type {
     if (type.typeName.kind !== ts.SyntaxKind.Identifier) {
-      throw new Error(`uknown typenamekind ${type.typeName.kind}`)
+      showWarning(type, `Unknown typename.kind (${type.typeName.kind})`);
+      throw new Error(`uknown typename.kind ${type.typeName.kind}`)
     }
     return serializeGenericType(type.typeName, type.typeArguments)
   }
@@ -113,6 +121,7 @@ function Transformer(context: ts.TransformationContext) {
       case ts.SyntaxKind.TupleType:
         return serializeTuple(<ts.TupleTypeNode>type)
       default:
+        showWarning(type, "Unknown type");
         throw new Error(`unknown type: ${type.kind}`)
     }
   }
@@ -142,6 +151,7 @@ function Transformer(context: ts.TransformationContext) {
           case "undefined":
             return { kind: Types.TypeKind.Undefined }
           default:
+            showWarning(initializer, 'Unknown identifier type');
             throw new Error(`unknown identifier type: ${initializer.getText()}`)
         }
       case ts.SyntaxKind.CallExpression:
@@ -149,6 +159,7 @@ function Transformer(context: ts.TransformationContext) {
         const callExp = (<ts.CallExpression>initializer)
         return serializeGenericType(callExp.expression, callExp.typeArguments)
       default:
+        showWarning(initializer, 'Unknown initializer type');
         throw new Error(`unknown initializer type: ${initializer.kind}`)
     }
   }
