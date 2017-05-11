@@ -27,6 +27,25 @@ class ParentClass {
    children: (OuterClass|TestClass)[] = [];
 }
 
+
+interface IGeom {
+    coordinates: any;
+}
+
+/**
+ * Breaks the runtime load.
+ *  reason: tsruntime generates a object that assumes "IGeom" is a class type that can
+ *          be referred to at runtime. Since it is not, the generated code can't
+ *          execute and has a reference error.
+ */
+/*
+@Reflective
+class LocationClass {
+   geomProp:  IGeom;
+}
+*/
+
+
 describe('Missing Support', () => {
    it('should support "type of" types', () => {
       // should allow supporting type of types
@@ -53,5 +72,11 @@ describe('Missing Support', () => {
       //expect(clsType).toBeDefined();
    });
 
-});
+   /*
+   it('Interface / types in properties', () => {
+      const clsType = getType(LocationClass);
+      expect(clsType).toBeDefined();
+   });
+   */
 
+});
