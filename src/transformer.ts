@@ -1,13 +1,20 @@
 
 import * as ts from 'typescript';
 import { Types, MetadataKey } from './types';
+import * as tse from './typescript-extended'
+
+export function unwrap<T>(v: T | undefined, msg?: string) {
+  if (v === undefined) {
+    throw new Error(msg || "v is undefined")
+  }
+  return v
+}
 
 
 
-module Serializer {
 
-
-  export function makeLiteral(type: Types.Type) {
+function Transformer(context: tse.TransformationContext) {
+  function makeLiteral(type: Types.Type) {
     const assigns = []
     assigns.push(ts.createPropertyAssignment("kind", ts.createLiteral(type.kind)))
     if (type.initializer !== undefined) {
@@ -23,6 +30,9 @@ module Serializer {
       case Types.TypeKind.Null:
       case Types.TypeKind.Undefined:
         break
+      case Types.TypeKind.Tuple:
+        assigns.push(ts.createPropertyAssignment("elementTypes", ts.createArrayLiteral(type.elementTypes.map(makeLiteral))))
+        break
       case Types.TypeKind.Union:
         assigns.push(ts.createPropertyAssignment("types", ts.createArrayLiteral(type.types.map(makeLiteral))))
         break
@@ -37,9 +47,10 @@ module Serializer {
         }
         break
     }
-    return ts.createObjectLiteral(assigns)
+    const obj = ts.createObjectLiteral(assigns)
+    // ts.setTextRange()
+    return obj
   }
-
   function serializeExpressionWithArgs(type: ts.ExpressionWithTypeArguments): Types.Type {
     const typeArgs = type.typeArguments;
     let allTypes: Types.Type[] = [];
@@ -50,12 +61,10 @@ module Serializer {
   }
 
   function serializeReference(type: ts.TypeReferenceNode): Types.Type {
-    const typeArgs = type.typeArguments;
-    let allTypes: Types.Type[] = [];
-    if (typeArgs !== undefined) {
-      allTypes = typeArgs.map(t => serializePropType(t))
+    if (type.typeName.kind !== ts.SyntaxKind.Identifier) {
+      throw new Error(`uknown typenamekind ${type.typeName.kind}`)
     }
-    return { kind: Types.TypeKind.Reference, arguments: allTypes, type: type.typeName }
+    return serializeGenericType(type.typeName, type.typeArguments)
   }
 
   function serializeUnion(type: ts.UnionTypeNode): Types.Type {
@@ -63,7 +72,17 @@ module Serializer {
     return { kind: Types.TypeKind.Union, types: nestedTypes }
   }
 
-  export function serializePropType(type: ts.TypeNode): Types.Type {
+  function serializeTuple(type: ts.TupleTypeNode): Types.Type {
+    const elementTypes = type.elementTypes.map(serializePropType)
+    return { kind: Types.TypeKind.Tuple, elementTypes }
+  }
+
+  function serializeArray(type: ts.ArrayTypeNode): Types.Type {
+    const t = serializePropType(type.elementType)
+    return { kind: Types.TypeKind.Reference, arguments: [t], type: ts.createIdentifier('Array') }
+  }
+
+  function serializePropType(type: ts.TypeNode): Types.Type {
     switch (type.kind) {
       case ts.SyntaxKind.TypeReference:
         return serializeReference(<ts.TypeReferenceNode>type)
@@ -71,6 +90,12 @@ module Serializer {
         return serializeExpressionWithArgs(<ts.ExpressionWithTypeArguments>type)
       case ts.SyntaxKind.UnionType:
         return serializeUnion(<ts.UnionTypeNode>type)
+      case ts.SyntaxKind.AnyKeyword:
+        return { kind: Types.TypeKind.Any }
+      case ts.SyntaxKind.VoidKeyword:
+        return { kind: Types.TypeKind.Void }
+      case ts.SyntaxKind.NeverKeyword:
+        return { kind: Types.TypeKind.Never }
       case ts.SyntaxKind.NumberKeyword:
         return { kind: Types.TypeKind.Number }
       case ts.SyntaxKind.BooleanKeyword:
@@ -81,21 +106,177 @@ module Serializer {
         return { kind: Types.TypeKind.Undefined }
       case ts.SyntaxKind.NullKeyword:
         return { kind: Types.TypeKind.Null }
-      case ts.SyntaxKind.ArrayType: //todo test
-        return { kind: Types.TypeKind.Array }
+      case ts.SyntaxKind.SymbolKeyword:
+        return { kind: Types.TypeKind.ESSymbol }
+      case ts.SyntaxKind.ArrayType:
+        return serializeArray(<ts.ArrayTypeNode>type)
+      case ts.SyntaxKind.TupleType:
+        return serializeTuple(<ts.TupleTypeNode>type)
       default:
-        throw new Error(`unknown type: ${type}`)
+        throw new Error(`unknown type: ${type.kind}`)
     }
   }
-}
-module ts2 {
-  interface InternalNode {
-    symbol?: ts.Symbol
+  function serializeGenericType(typeName: ts.Expression, typeArguments?: ts.NodeArray<ts.TypeNode>): Types.Type {
+    const newTypeName = ts.createIdentifier(typeName.getText())
+    newTypeName.parent = currentScope
+    newTypeName.flags = 0
+    const typeArgs: ts.TypeNode[] = (typeArguments || []);
+    return { kind: Types.TypeKind.Reference, type: newTypeName, arguments: typeArgs.map(t => serializePropType(t)) }
   }
-  export interface ClassDeclaration extends ts.ClassDeclaration, InternalNode { }
-  export interface SourceFile extends ts.SourceFile, InternalNode { }
-  export interface PropertyDeclaration extends ts.PropertyDeclaration, InternalNode { }
 
+  function serializeTypeFromInitializer(initializer: ts.Expression): Types.Type {
+    switch (initializer.kind) {
+      case ts.SyntaxKind.FalseKeyword:
+      case ts.SyntaxKind.TrueKeyword:
+        return { kind: Types.TypeKind.Boolean }
+      case ts.SyntaxKind.StringLiteral:
+        return { kind: Types.TypeKind.String }
+      case ts.SyntaxKind.NumericLiteral:
+        return { kind: Types.TypeKind.Number }
+      case ts.SyntaxKind.NullKeyword:
+        return { kind: Types.TypeKind.Null }
+      case ts.SyntaxKind.ArrayLiteralExpression:
+        return { kind: Types.TypeKind.Reference, type: ts.createIdentifier('Array'), arguments: [] }
+      case ts.SyntaxKind.Identifier:
+        switch (initializer.getText()) {
+          case "undefined":
+            return { kind: Types.TypeKind.Undefined }
+          default:
+            throw new Error(`unknown identifier type: ${initializer.getText()}`)
+        }
+      case ts.SyntaxKind.CallExpression:
+      case ts.SyntaxKind.NewExpression:
+        const callExp = (<ts.CallExpression>initializer)
+        return serializeGenericType(callExp.expression, callExp.typeArguments)
+      default:
+        throw new Error(`unknown initializer type: ${initializer.kind}`)
+    }
+  }
+
+  let currentScope: ts.SourceFile | ts.CaseBlock | ts.ModuleBlock | ts.Block;
+  function addDecorator(oldDecorators: ts.NodeArray<ts.Decorator> | undefined, exp: any) {
+    let newDecorators = ts.createNodeArray<ts.Decorator>()
+    if (oldDecorators !== undefined) {
+      newDecorators.push(...oldDecorators)
+    }
+    const decCall = ts.createCall(ts.createIdentifier('Reflect.metadata'), undefined, [ts.createLiteral(MetadataKey), exp])
+    const dec = ts.createDecorator(decCall)
+    newDecorators.push(dec)
+    return newDecorators
+  }
+
+  function visitPropertyDeclaration(node: tse.PropertyDeclaration) {
+    let serializedType: Types.Type;
+    let initializerExp;
+    if (node.type == undefined) {
+      serializedType = serializeTypeFromInitializer(unwrap(node.initializer))
+    } else {
+      serializedType = serializePropType(node.type)
+    }
+    if (node.initializer !== undefined) {
+      initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
+    }
+
+    serializedType.optional = node.questionToken !== undefined
+    serializedType.initializer = initializerExp
+    const objLiteral = makeLiteral(serializedType)
+    const newDecorators = addDecorator(node.decorators, objLiteral)
+    let newNode = ts.getMutableClone(node);
+    newNode.decorators = newDecorators
+    return newNode
+  }
+  function visitClassMember(node: ts.Node) {
+    switch (node.kind) {
+      case ts.SyntaxKind.PropertyDeclaration:
+        return visitPropertyDeclaration(<tse.PropertyDeclaration>node)
+      default:
+        return node
+    }
+  }
+
+  function shouldReflect(node: ts.Node) {
+    if (node.decorators === undefined) {
+      return false
+    }
+    for (const dec of node.decorators) {
+      if (dec.kind == ts.SyntaxKind.Decorator) {
+        if (transformConfig.decoratorNames.indexOf(dec.expression.getText()) != -1) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  function getClassType(node: tse.ClassDeclaration) {
+    let extendsCls: Types.Type | undefined;
+    // if (node.heritageClauses !== undefined) {
+    //   for (const clause of node.heritageClauses) {
+    //     if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
+    //       if (clause.types.length != 1) {
+    //         throw new Error(`extend clause should have exactly one type, ${clause.types}`)
+    //       }
+    //       extendsCls = serializePropType(clause.types[0])
+    //     }
+    //   }
+    // }
+    const props: string[] = []
+    node.forEachChild(ch => {
+      if (ch.kind == ts.SyntaxKind.PropertyDeclaration) {
+        props.push((<ts.PropertyDeclaration>ch).name.getText())
+      }
+    })
+    const classType: Types.ClassType = { props, kind: Types.TypeKind.Class, extends: extendsCls }
+    return makeLiteral(classType)
+  }
+
+  function visitClassDeclaration(node: tse.ClassDeclaration) {
+    if (!shouldReflect(node)) {
+      return node
+    }
+    const newNode = ts.getMutableClone(node);
+
+    const newMembers = ts.visitNodes(node.members, visitClassMember);
+    const classTypeExp = getClassType(node)
+    newNode.members = newMembers
+    newNode.decorators = addDecorator(node.decorators, classTypeExp)
+    return newNode
+  }
+  function onBeforeVisitNode(node: ts.Node) {
+    switch (node.kind) {
+      case ts.SyntaxKind.SourceFile:
+      case ts.SyntaxKind.CaseBlock:
+      case ts.SyntaxKind.ModuleBlock:
+      case ts.SyntaxKind.Block:
+        currentScope = <ts.SourceFile | ts.CaseBlock | ts.ModuleBlock | ts.Block>node;
+        // currentScopeFirstDeclarationsOfName = undefined;
+        break;
+    }
+  }
+  function visitor(node: ts.Node): ts.VisitResult<ts.Node> {
+    onBeforeVisitNode(node)
+    switch (node.kind) {
+      case ts.SyntaxKind.ClassDeclaration:
+        return visitClassDeclaration(<tse.ClassDeclaration>node)
+      default:
+        return node
+    }
+  }
+
+  function transform(sourceI: ts.SourceFile): ts.SourceFile {
+    const source = sourceI as tse.SourceFile
+    if (source.isDeclarationFile) {
+      return source
+    }
+    // const newStatements = ts.visitLexicalEnvironment(source.statements, visitor, context)
+    // const newNode = ts.updateSourceFileNode(source, ts.setTextRange(newStatements, source.statements))
+    onBeforeVisitNode(source)
+    const newNode = ts.visitEachChild(source, visitor, context);
+    newNode.symbol = source.symbol;
+    return newNode
+
+  }
+  return transform
 }
 
 /**
@@ -117,126 +298,10 @@ class TransformConfig {
 const transformConfig: TransformConfig = new TransformConfig();
 
 
-function Transformer(context: ts.TransformationContext) {
-  function addDecorator(oldDecorators: ts.NodeArray<ts.Decorator> | undefined, exp: ts.Expression) {
-    let newDecorators = ts.createNodeArray<ts.Decorator>()
-    if (oldDecorators !== undefined) {
-      newDecorators.push(...oldDecorators)
-    }
-    const decCall = ts.createCall(ts.createIdentifier('Reflect.metadata'), undefined, [ts.createLiteral(MetadataKey), exp])
-    const dec = ts.createDecorator(decCall)
-    newDecorators.push(dec)
-    return newDecorators
-  }
 
-  function visitPropertyDeclaration(node: ts2.PropertyDeclaration) {
-    if (node.type === undefined) {
-      return node
-    }
-    let initializerExp;
-    if (node.initializer !== undefined) {
-      initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
-    }
-    let serializedType = Serializer.serializePropType(node.type)
-    serializedType.optional = node.questionToken !== undefined
-    serializedType.initializer = initializerExp
-    const objLiteral = Serializer.makeLiteral(serializedType)
-    const newDecorators = addDecorator(node.decorators, objLiteral)
-    let newNode = ts.getMutableClone(node);
-    newNode.decorators = newDecorators
-    return newNode
-  }
-  function visitClassMember(node: ts.Node) {
-    switch (node.kind) {
-      case ts.SyntaxKind.PropertyDeclaration:
-        return visitPropertyDeclaration(<ts2.PropertyDeclaration>node)
-      default:
-        return node
-    }
-  }
-
-  function shouldReflect(node: ts.Node) {
-    if (node.decorators === undefined) {
-      return false
-    }
-    for (const dec of node.decorators) {
-      if (dec.kind == ts.SyntaxKind.Decorator) {
-        if (transformConfig.decoratorNames.indexOf(dec.expression.getText()) != -1) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-
-  function getClassType(node: ts2.ClassDeclaration) {
-    let extendsCls: Types.Type | undefined;
-    if (node.heritageClauses !== undefined) {
-      for (const clause of node.heritageClauses) {
-        if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
-          if (clause.types.length != 1) {
-            throw new Error(`extend clause should have exactly one type, ${clause.types}`)
-          }
-          extendsCls = Serializer.serializePropType(clause.types[0])
-        }
-      }
-    }
-    const props: string[] = []
-    node.forEachChild(ch => {
-      if (ch.kind == ts.SyntaxKind.PropertyDeclaration) {
-        props.push((<ts.PropertyDeclaration>ch).name.getText())
-      }
-    })
-    const classType: Types.ClassType = { props, kind: Types.TypeKind.Class, extends: extendsCls }
-    return Serializer.makeLiteral(classType)
-  }
-
-  function visitClassDeclaration(node: ts2.ClassDeclaration) {
-    if (!shouldReflect(node)) {
-      return node
-    }
-    const newNode = ts.getMutableClone(node);
-
-    const newMembers = ts.visitNodes(node.members, visitClassMember);
-    const classTypeExp = getClassType(node)
-    newNode.members = newMembers
-    newNode.decorators = addDecorator(node.decorators, classTypeExp)
-    return newNode
-  }
-
-  function visitor(node: ts.Node): ts.VisitResult<ts.Node> {
-    switch (node.kind) {
-      case ts.SyntaxKind.ClassDeclaration:
-        return visitClassDeclaration(<ts2.ClassDeclaration>node)
-      default:
-        return node
-    }
-  }
-
-  function transform(sourceI: ts.SourceFile): ts.SourceFile {
-    const source = sourceI as ts2.SourceFile
-    if (source.isDeclarationFile) {
-      return source
-    }
-    // const newStatements = ts.visitLexicalEnvironment(source.statements, visitor, context)
-    // const newNode = ts.updateSourceFileNode(source, ts.setTextRange(newStatements, source.statements))
-    const newNode = ts.visitEachChild(source, visitor, context);
-    newNode.symbol = source.symbol;
-    return newNode
-  }
-
-  return transform;
-}
-
-
-/**
- * Build and return a transformer.
- */
-export function buildTransformer(config?: IConfig): (c: ts.TransformationContext) => void {
+export default function TransformerFactory(config?: IConfig) {
   if (config != undefined) {
     transformConfig.applyConfig(config);
   }
   return Transformer;
 }
-
-export default buildTransformer;

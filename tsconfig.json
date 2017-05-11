@@ -9,12 +9,12 @@
         "sourceMap": true,
         "declaration": true,
         "experimentalDecorators": true,
-        "noUnusedLocals": true,
+        "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
         "removeComments": true,
         "strict": true,
-        "lib": [ "es6", "dom" ]
+        "lib": ["dom", "es2015"]
     },
     "include": [
         "src/**/*"
