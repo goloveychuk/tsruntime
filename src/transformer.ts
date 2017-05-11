@@ -122,7 +122,7 @@ function Transformer(context: ts.TransformationContext) {
         return serializeTuple(<ts.TupleTypeNode>type)
       default:
         showWarning(type, "Unknown type");
-        throw new Error(`unknown type: ${type.kind}`)
+        return { kind: Types.TypeKind.Unknown };
     }
   }
   function serializeGenericType(typeName: ts.Expression, typeArguments?: ts.NodeArray<ts.TypeNode>): Types.Type {

@@ -17,19 +17,21 @@ export module Types {
     Undefined,
     Null,
     Never,
-    
+
     Object,
-    
+
     Tuple,
     Union,
     Reference,
-    Class
+    Class,
+
+    Unknown = 999
   }
 
 
 
 
-  export type Type = TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType  | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
+  export type Type = TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType  | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType | UnknownType
 
   export interface BaseType {
     kind: TypeKind
@@ -95,6 +97,10 @@ export module Types {
     kind: TypeKind.Class
     props: string[]
     extends?: Types.Type
+  }
+
+  export interface UnknownType extends BaseType {
+    kind: TypeKind.Unknown
   }
 
 }
