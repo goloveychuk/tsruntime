@@ -12,6 +12,8 @@ import {
    Types
 } from '../src/types'
 
+import { ExternalClass } from './external_classes';
+
 class OuterClass {
 
 }
@@ -27,13 +29,26 @@ class ParentClass {
    children: (OuterClass|TestClass)[] = [];
 }
 
+/**
+ * BUG: Breaks the runtime load.
+ *
+ * Refers to a type ("ExternalClass") that is not used in this
+ * file by the normal code so it is not exposed.
+ */
+/*
+@Reflective
+class UseExternalClass {
+   extRef: ExternalClass;
+}
+*/
+
 
 interface IGeom {
     coordinates: any;
 }
 
 /**
- * Breaks the runtime load.
+ * BUG: Breaks the runtime load.
  *  reason: tsruntime generates a object that assumes "IGeom" is a class type that can
  *          be referred to at runtime. Since it is not, the generated code can't
  *          execute and has a reference error.
