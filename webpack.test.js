@@ -1,14 +1,18 @@
-const tsRuntimeBuilder = require('./dist/transformer').default;
 
-function getCustomTransformers() {
-  return {
+const TsRuntimeTransformerBuilder = require('./dist/transformer').default;
+
+
+
+function CustomTransformersBuilder(program) {
+  const tsruntimeTrans = TsRuntimeTransformerBuilder(program)
+  return () => ({
     before: [
-      tsRuntimeBuilder({
-        decoratorNames: ['Reflective', 'UserDecorator']
-      })
+      tsruntimeTrans
     ]
-  }
+  })
 }
+
+
 
 
 module.exports = function (options) {
@@ -29,7 +33,7 @@ return {
                {
                   loader: 'awesome-typescript-loader',
                   options: {
-                     getCustomTransformers: getCustomTransformers,
+                     getCustomTransformers: CustomTransformersBuilder,
                   }
                },
             ],

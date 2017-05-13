@@ -11,7 +11,7 @@
             "program": "${workspaceRoot}/tests/build/tests/start.js",
             "preLaunchTask": "compile",
             "args": [
-                "${workspaceRoot}/tests/references.spec.ts"
+                "${workspaceRoot}/tests/temp.spec.ts"
             ],
             "outFiles": [
                 "${workspaceRoot}/tests/build/**/*"

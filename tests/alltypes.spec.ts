@@ -24,7 +24,6 @@ class AllTypes {
     never: never
     symbol: symbol
     array: string[]
-    // object: {}
     union: string | number
     tuple: [string, number]
 

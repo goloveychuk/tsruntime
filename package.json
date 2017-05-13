@@ -28,7 +28,7 @@
   "devDependencies": {
     "@types/node": "^7.0.18",
     "@types/jasmine": "^2.2.34",
-    "awesome-typescript-loader": "3.1.3",
+    "awesome-typescript-loader": "git://github.com/goloveychuk/awesome-typescript-loader#dist",
     "jasmine": "~2.5.2",
     "karma": "~1.5.0",
     "karma-chrome-launcher": "^2.0.0",

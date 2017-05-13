@@ -17,7 +17,9 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   const checker  = program.getTypeChecker()
   function makeLiteral(type: Types.Type) {
     const assigns = []
-    assigns.push(ts.createPropertyAssignment("kind", ts.createLiteral(type.kind)))
+    const kindAssign = ts.createPropertyAssignment("kind", ts.createLiteral(type.kind))
+    const kindAssignComment = ts.addSyntheticTrailingComment(kindAssign, ts.SyntaxKind.MultiLineCommentTrivia, Types.TypeKind[type.kind], false)
+    assigns.push(kindAssignComment)
     if (type.initializer !== undefined) {
       assigns.push(ts.createPropertyAssignment("initializer", type.initializer))
     }
@@ -52,9 +54,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         }
         break
     }
-    const obj = ts.createObjectLiteral(assigns)
-    // ts.setTextRange()
-    return obj
+    return ts.createObjectLiteral(assigns)
   }
   function getIdentifierForSymbol(symbol: ts.Symbol): ts.Identifier {
     const typeIdentifier = ts.createIdentifier(symbol.getName())
@@ -77,9 +77,12 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const typeArgs = type.typeArguments;
     let allTypes: Types.Type[] = [];
     if (typeArgs !== undefined) {
-      allTypes = typeArgs.map(t => serializePropType(t))
+      allTypes = typeArgs.map(t => serializeType(t))
     }
     const target = type.target;
+    if (target.objectFlags & ts.ObjectFlags.Tuple) {
+      return {kind: Types.TypeKind.Tuple, elementTypes: allTypes}
+    }
     const symbol = target.getSymbol()
     if (symbol.valueDeclaration === undefined) {
       return {kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: allTypes}
@@ -89,11 +92,22 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return { kind: Types.TypeKind.Reference, arguments: allTypes, type: typeName }
     }
   }
+  function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers): Types.Type {
+    const parent = type.getSymbol();
+    type.getProperties() //to fill declared props
+    let props =  type.declaredProperties.map(prop => prop.getName())
+    const base = type.getBaseTypes()
+    let extendsCls: Types.Type | undefined;
+    if (base.length > 0) {
+       extendsCls = serializeType(base[0])
+    }
+    return {kind: Types.TypeKind.Class, props, extends: extendsCls}
+  }
 
   function serializeObject(type: ts.ObjectType): Types.Type {
-    if (type.objectFlags & ts.ObjectFlags.Tuple) {
-      // return { kind: Types.TypeKind.Tuple }
-    }     
+    if (type.objectFlags & ts.ObjectFlags.Class) {
+        return serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type)
+    }
     if (type.objectFlags & ts.ObjectFlags.Reference) {
       return serializeReference(<ts.TypeReference>type)
     } else if (type.objectFlags & ts.ObjectFlags.Interface) {
@@ -108,11 +122,11 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
 
   function serializeUnion(type: ts.UnionType): Types.Type {
-    const nestedTypes = type.types.map(t => serializePropType(t))
+    const nestedTypes = type.types.map(t => serializeType(t))
     return { kind: Types.TypeKind.Union, types: nestedTypes }
   }
 
-  function serializePropType(type: ts.Type): Types.Type {
+  function serializeType(type: ts.Type): Types.Type {
     if (type.flags & ts.TypeFlags.Any) {
       return { kind: Types.TypeKind.Any }
     } else if (type.flags & ts.TypeFlags.String) {
@@ -122,15 +136,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     } else if (type.flags & ts.TypeFlags.Boolean) {
       return { kind: Types.TypeKind.Boolean }
     } else if (type.flags & ts.TypeFlags.Enum) {
-      return { kind: Types.TypeKind.Enum } //todo
-      // } else if (type.flags & ts.TypeFlags.StringLiteral) {
-      //   return {kind: Types.TypeKind.StringLiteral} //todo
-      // } else if (type.flags & ts.TypeFlags.NumberLiteral) {
-      //   return {kind: Types.TypeKind.NumberLiteral} //todo
-      // } else if (type.flags & ts.TypeFlags.BooleanLiteral) {
-      //   return {kind: Types.TypeKind.BooleanLiteral} //todo
-      // } else if (type.flags & ts.TypeFlags.EnumLiteral) {
-      //   return {kind: Types.TypeKind.EnumLiteral} //todo
+      return { kind: Types.TypeKind.Enum }
     } else if (type.flags & ts.TypeFlags.ESSymbol) {
       return { kind: Types.TypeKind.ESSymbol }
     } else if (type.flags & ts.TypeFlags.Void) {
@@ -165,7 +171,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
   function visitPropertyDeclaration(node: tse.PropertyDeclaration) {
     const type = checker.getTypeAtLocation(node)
-    let serializedType = serializePropType(type)
+    let serializedType = serializeType(type)
     let initializerExp;
     if (node.initializer !== undefined) {
       initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
@@ -202,27 +208,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return false
   }
 
-  function getClassType(node: tse.ClassDeclaration) {
-    let extendsCls: Types.Type | undefined;
-    if (node.heritageClauses !== undefined) {
-      for (const clause of node.heritageClauses) {
-        if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
-          if (clause.types.length != 1) {
-            throw new Error(`extend clause should have exactly one type, ${clause.types}`)
-          }
-          // extendsCls = serializePropType(clause.types[0])
-        }
-      }
-    }
-    const props: string[] = []
-    node.forEachChild(ch => {
-      if (ch.kind == ts.SyntaxKind.PropertyDeclaration) {
-        props.push((<ts.PropertyDeclaration>ch).name.getText())
-      }
-    })
-    const classType: Types.ClassType = { props, kind: Types.TypeKind.Class, extends: extendsCls }
-    return makeLiteral(classType)
-  }
+
 
   function visitClassDeclaration(node: tse.ClassDeclaration) {
     if (!shouldReflect(node)) {
@@ -231,7 +217,10 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const newNode = ts.getMutableClone(node);
 
     const newMembers = ts.visitNodes(node.members, visitClassMember);
-    const classTypeExp = getClassType(node)
+
+    const type = checker.getTypeAtLocation(node)
+    
+    const classTypeExp =  makeLiteral(serializeType(type))
     newNode.members = newMembers
     newNode.decorators = addDecorator(node.decorators, classTypeExp)
     return newNode
