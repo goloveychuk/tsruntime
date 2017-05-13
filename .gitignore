@@ -1,5 +1,5 @@
 /dist
 /node_modules
-/.vscode
 /tests/build
+/tests/emit_output
 /.idea/

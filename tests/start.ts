@@ -35,5 +35,6 @@ compile(process.argv.slice(2), {
     emitDecoratorMetadata: true,
     strict: true,
     lib: ["lib.dom.d.ts", "lib.es2015.d.ts"],
-    experimentalDecorators: true
+    experimentalDecorators: true,
+    outDir: "./tests/emit_output"
 });

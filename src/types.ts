@@ -23,18 +23,26 @@ export module Types {
     Tuple,
     Union,
     Reference,
+    Interface,
     Class
   }
 
 
 
 
-  export type Type = TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType  | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
+  export type Type = InterfaceType |  TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType  | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType
 
   export interface BaseType {
     kind: TypeKind
     initializer?: any //todo
     optional?: boolean
+  }
+
+
+  export interface InterfaceType extends BaseType {
+    kind: TypeKind.Interface
+    name: string
+    arguments: Type[]
   }
 
   export interface StringType extends BaseType {

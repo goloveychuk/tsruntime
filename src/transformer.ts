@@ -13,7 +13,8 @@ export function unwrap<T>(v: T | undefined, msg?: string) {
 
 
 
-function Transformer(context: ts.TransformationContext) {
+function Transformer(program: ts.Program, context: ts.TransformationContext) {
+  const checker  = program.getTypeChecker()
   function makeLiteral(type: Types.Type) {
     const assigns = []
     assigns.push(ts.createPropertyAssignment("kind", ts.createLiteral(type.kind)))
@@ -29,6 +30,10 @@ function Transformer(context: ts.TransformationContext) {
       case Types.TypeKind.String:
       case Types.TypeKind.Null:
       case Types.TypeKind.Undefined:
+        break
+      case Types.TypeKind.Interface:
+        assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
+        assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))        
         break
       case Types.TypeKind.Tuple:
         assigns.push(ts.createPropertyAssignment("elementTypes", ts.createArrayLiteral(type.elementTypes.map(makeLiteral))))
@@ -51,108 +56,101 @@ function Transformer(context: ts.TransformationContext) {
     // ts.setTextRange()
     return obj
   }
-  function serializeExpressionWithArgs(type: ts.ExpressionWithTypeArguments): Types.Type {
+  function getIdentifierForSymbol(symbol: ts.Symbol): ts.Identifier {
+    const typeIdentifier = ts.createIdentifier(symbol.getName())
+    typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
+    typeIdentifier.parent = currentScope;
+    return typeIdentifier
+  }
+
+  
+  function serializeInterface(type: ts.InterfaceType): Types.Type {
+    const symbol = type.getSymbol()
+    if (symbol.valueDeclaration === undefined) {
+      return {kind: Types.TypeKind.Interface, name: symbol.getName(), arguments:[]}
+    }
+    const typeName = getIdentifierForSymbol(symbol)    
+    return {kind: Types.TypeKind.Reference, type: typeName, arguments:[]}
+  }
+
+  function serializeReference(type: ts.TypeReference): Types.Type {
     const typeArgs = type.typeArguments;
     let allTypes: Types.Type[] = [];
     if (typeArgs !== undefined) {
       allTypes = typeArgs.map(t => serializePropType(t))
     }
-    return { kind: Types.TypeKind.Reference, arguments: allTypes, type: type.expression }
-  }
+    const target = type.target;
+    const symbol = target.getSymbol()
+    if (symbol.valueDeclaration === undefined) {
+      return {kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: allTypes}
 
-  function serializeReference(type: ts.TypeReferenceNode): Types.Type {
-    if (type.typeName.kind !== ts.SyntaxKind.Identifier) {
-      throw new Error(`uknown typenamekind ${type.typeName.kind}`)
+    } else {
+      const typeName = getIdentifierForSymbol(symbol)
+      return { kind: Types.TypeKind.Reference, arguments: allTypes, type: typeName }
     }
-    return serializeGenericType(type.typeName, type.typeArguments)
   }
 
-  function serializeUnion(type: ts.UnionTypeNode): Types.Type {
+  function serializeObject(type: ts.ObjectType): Types.Type {
+    if (type.objectFlags & ts.ObjectFlags.Tuple) {
+      // return { kind: Types.TypeKind.Tuple }
+    }     
+    if (type.objectFlags & ts.ObjectFlags.Reference) {
+      return serializeReference(<ts.TypeReference>type)
+    } else if (type.objectFlags & ts.ObjectFlags.Interface) {
+      return serializeInterface(<ts.InterfaceType>type)
+    } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
+      return { kind: Types.TypeKind.Reference, type: ts.createIdentifier("Object"), arguments: [] }      
+    }
+
+    throw new Error(`unknown object type: ${checker.typeToString(type)}`)
+  }
+
+
+
+  function serializeUnion(type: ts.UnionType): Types.Type {
     const nestedTypes = type.types.map(t => serializePropType(t))
     return { kind: Types.TypeKind.Union, types: nestedTypes }
   }
 
-  function serializeTuple(type: ts.TupleTypeNode): Types.Type {
-    const elementTypes = type.elementTypes.map(serializePropType)
-    return { kind: Types.TypeKind.Tuple, elementTypes }
-  }
-
-  function serializeArray(type: ts.ArrayTypeNode): Types.Type {
-    const t = serializePropType(type.elementType)
-    return { kind: Types.TypeKind.Reference, arguments: [t], type: ts.createIdentifier('Array') }
-  }
-
-  function serializePropType(type: ts.TypeNode): Types.Type {
-    switch (type.kind) {
-      case ts.SyntaxKind.TypeReference:
-        return serializeReference(<ts.TypeReferenceNode>type)
-      case ts.SyntaxKind.ExpressionWithTypeArguments:
-        return serializeExpressionWithArgs(<ts.ExpressionWithTypeArguments>type)
-      case ts.SyntaxKind.UnionType:
-        return serializeUnion(<ts.UnionTypeNode>type)
-      case ts.SyntaxKind.AnyKeyword:
-        return { kind: Types.TypeKind.Any }
-      case ts.SyntaxKind.VoidKeyword:
-        return { kind: Types.TypeKind.Void }
-      case ts.SyntaxKind.NeverKeyword:
-        return { kind: Types.TypeKind.Never }
-      case ts.SyntaxKind.NumberKeyword:
-        return { kind: Types.TypeKind.Number }
-      case ts.SyntaxKind.BooleanKeyword:
-        return { kind: Types.TypeKind.Boolean }
-      case ts.SyntaxKind.StringKeyword:
-        return { kind: Types.TypeKind.String }
-      case ts.SyntaxKind.UndefinedKeyword:
-        return { kind: Types.TypeKind.Undefined }
-      case ts.SyntaxKind.NullKeyword:
-        return { kind: Types.TypeKind.Null }
-      case ts.SyntaxKind.SymbolKeyword:
-        return { kind: Types.TypeKind.ESSymbol }
-      case ts.SyntaxKind.ArrayType:
-        return serializeArray(<ts.ArrayTypeNode>type)
-      case ts.SyntaxKind.TupleType:
-        return serializeTuple(<ts.TupleTypeNode>type)
-      default:
-        throw new Error(`unknown type: ${type.kind}`)
+  function serializePropType(type: ts.Type): Types.Type {
+    if (type.flags & ts.TypeFlags.Any) {
+      return { kind: Types.TypeKind.Any }
+    } else if (type.flags & ts.TypeFlags.String) {
+      return { kind: Types.TypeKind.String }
+    } else if (type.flags & ts.TypeFlags.Number) {
+      return { kind: Types.TypeKind.Number }
+    } else if (type.flags & ts.TypeFlags.Boolean) {
+      return { kind: Types.TypeKind.Boolean }
+    } else if (type.flags & ts.TypeFlags.Enum) {
+      return { kind: Types.TypeKind.Enum } //todo
+      // } else if (type.flags & ts.TypeFlags.StringLiteral) {
+      //   return {kind: Types.TypeKind.StringLiteral} //todo
+      // } else if (type.flags & ts.TypeFlags.NumberLiteral) {
+      //   return {kind: Types.TypeKind.NumberLiteral} //todo
+      // } else if (type.flags & ts.TypeFlags.BooleanLiteral) {
+      //   return {kind: Types.TypeKind.BooleanLiteral} //todo
+      // } else if (type.flags & ts.TypeFlags.EnumLiteral) {
+      //   return {kind: Types.TypeKind.EnumLiteral} //todo
+    } else if (type.flags & ts.TypeFlags.ESSymbol) {
+      return { kind: Types.TypeKind.ESSymbol }
+    } else if (type.flags & ts.TypeFlags.Void) {
+      return { kind: Types.TypeKind.Void }
+    } else if (type.flags & ts.TypeFlags.Undefined) {
+      return { kind: Types.TypeKind.Undefined }
+    } else if (type.flags & ts.TypeFlags.Null) {
+      return { kind: Types.TypeKind.Null }
+    } else if (type.flags & ts.TypeFlags.Never) {
+      return { kind: Types.TypeKind.Never }
+    } else if (type.flags & ts.TypeFlags.Object) {
+      return serializeObject(<ts.ObjectType>type)
+    } else if (type.flags & ts.TypeFlags.Union) {
+      return serializeUnion(<ts.UnionType>type)
     }
-  }
-  function serializeGenericType(typeName: ts.Expression, typeArguments?: ts.NodeArray<ts.TypeNode>): Types.Type {
-    const newTypeName = ts.createIdentifier(typeName.getText())
-    newTypeName.parent = currentScope
-    newTypeName.flags = 0
-    const typeArgs: ts.TypeNode[] = (typeArguments || []);
-    return { kind: Types.TypeKind.Reference, type: newTypeName, arguments: typeArgs.map(t => serializePropType(t)) }
+    throw new Error(`unknown type: ${checker.typeToString(type)}`)
   }
 
-  function serializeTypeFromInitializer(initializer: ts.Expression): Types.Type {
-    switch (initializer.kind) {
-      case ts.SyntaxKind.FalseKeyword:
-      case ts.SyntaxKind.TrueKeyword:
-        return { kind: Types.TypeKind.Boolean }
-      case ts.SyntaxKind.StringLiteral:
-        return { kind: Types.TypeKind.String }
-      case ts.SyntaxKind.NumericLiteral:
-        return { kind: Types.TypeKind.Number }
-      case ts.SyntaxKind.NullKeyword:
-        return { kind: Types.TypeKind.Null }
-      case ts.SyntaxKind.ArrayLiteralExpression:
-        return { kind: Types.TypeKind.Reference, type: ts.createIdentifier('Array'), arguments: [] }
-      case ts.SyntaxKind.Identifier:
-        switch (initializer.getText()) {
-          case "undefined":
-            return { kind: Types.TypeKind.Undefined }
-          default:
-            throw new Error(`unknown identifier type: ${initializer.getText()}`)
-        }
-      case ts.SyntaxKind.CallExpression:
-      case ts.SyntaxKind.NewExpression:
-        const callExp = (<ts.CallExpression>initializer)
-        return serializeGenericType(callExp.expression, callExp.typeArguments)
-      default:
-        throw new Error(`unknown initializer type: ${initializer.kind}`)
-    }
-  }
 
+  
   let currentScope: ts.SourceFile | ts.CaseBlock | ts.ModuleBlock | ts.Block;
   function addDecorator(oldDecorators: ts.NodeArray<ts.Decorator> | undefined, exp: any) {
     let newDecorators = ts.createNodeArray<ts.Decorator>()
@@ -166,13 +164,9 @@ function Transformer(context: ts.TransformationContext) {
   }
 
   function visitPropertyDeclaration(node: tse.PropertyDeclaration) {
-    let serializedType: Types.Type;
+    const type = checker.getTypeAtLocation(node)
+    let serializedType = serializePropType(type)
     let initializerExp;
-    if (node.type == undefined) {
-      serializedType = serializeTypeFromInitializer(unwrap(node.initializer))
-    } else {
-      serializedType = serializePropType(node.type)
-    }
     if (node.initializer !== undefined) {
       initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
     }
@@ -216,7 +210,7 @@ function Transformer(context: ts.TransformationContext) {
           if (clause.types.length != 1) {
             throw new Error(`extend clause should have exactly one type, ${clause.types}`)
           }
-          extendsCls = serializePropType(clause.types[0])
+          // extendsCls = serializePropType(clause.types[0])
         }
       }
     }
@@ -258,7 +252,11 @@ function Transformer(context: ts.TransformationContext) {
     switch (node.kind) {
       case ts.SyntaxKind.ClassDeclaration:
         return visitClassDeclaration(<tse.ClassDeclaration>node)
+      // case ts.SyntaxKind.Identifier:
+        // return node
       default:
+        // console.log(node.kind)
+        // return ts.visitEachChild(node, visitor, context)
         return node
     }
   }
@@ -297,9 +295,6 @@ const transformConfig: TransformConfig = new TransformConfig();
 
 
 
-export default function TransformerFactory(config?: IConfig): ts.TransformerFactory<ts.SourceFile> {
-  if (config != undefined) {
-    transformConfig.applyConfig(config);
-  }
-  return Transformer;
+export default function TransformerFactory(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
+  return (ctx: ts.TransformationContext) => Transformer(program, ctx)
 }

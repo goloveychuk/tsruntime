@@ -1,6 +1,5 @@
 
 import {Reflective, getType, getPropType, Types} from '../src/types'
-
 class GenericCls<T> {
 
 }
