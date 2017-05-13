@@ -14,7 +14,7 @@ export function unwrap<T>(v: T | undefined, msg?: string) {
 
 
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
-  const checker  = program.getTypeChecker()
+  const checker = program.getTypeChecker()
   function makeLiteral(type: Types.Type) {
     const assigns = []
     const kindAssign = ts.createPropertyAssignment("kind", ts.createLiteral(type.kind))
@@ -32,7 +32,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         break
       case Types.TypeKind.Interface:
         assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
-        assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))        
+        assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         break
       case Types.TypeKind.Tuple:
         assigns.push(ts.createPropertyAssignment("elementTypes", ts.createArrayLiteral(type.elementTypes.map(makeLiteral))))
@@ -60,14 +60,14 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return typeIdentifier
   }
 
-  
+
   function serializeInterface(type: ts.InterfaceType): Types.Type {
     const symbol = type.getSymbol()
     if (symbol.valueDeclaration === undefined) {
-      return {kind: Types.TypeKind.Interface, name: symbol.getName(), arguments:[]}
+      return { kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: [] }
     }
-    const typeName = getIdentifierForSymbol(symbol)    
-    return {kind: Types.TypeKind.Reference, type: typeName, arguments:[]}
+    const typeName = getIdentifierForSymbol(symbol)
+    return { kind: Types.TypeKind.Reference, type: typeName, arguments: [] }
   }
 
   function serializeReference(type: ts.TypeReference): Types.Type {
@@ -78,11 +78,11 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     const target = type.target;
     if (target.objectFlags & ts.ObjectFlags.Tuple) {
-      return {kind: Types.TypeKind.Tuple, elementTypes: allTypes}
+      return { kind: Types.TypeKind.Tuple, elementTypes: allTypes }
     }
     const symbol = target.getSymbol()
     if (symbol.valueDeclaration === undefined) {
-      return {kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: allTypes}
+      return { kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: allTypes }
 
     } else {
       const typeName = getIdentifierForSymbol(symbol)
@@ -92,25 +92,25 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers): Types.Type {
     const parent = type.getSymbol();
     type.getProperties() //to fill declared props
-    let props =  type.declaredProperties.map(prop => prop.getName())
+    let props = type.declaredProperties.map(prop => prop.getName())
     const base = type.getBaseTypes()
     let extendsCls: Types.Type | undefined;
     if (base.length > 0) {
-       extendsCls = serializeType(base[0])
+      extendsCls = serializeType(base[0])
     }
-    return {kind: Types.TypeKind.Class, props, extends: extendsCls}
+    return { kind: Types.TypeKind.Class, props, extends: extendsCls }
   }
 
   function serializeObject(type: ts.ObjectType): Types.Type {
     if (type.objectFlags & ts.ObjectFlags.Class) {
-        return serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type)
+      return serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type)
     }
     if (type.objectFlags & ts.ObjectFlags.Reference) {
       return serializeReference(<ts.TypeReference>type)
     } else if (type.objectFlags & ts.ObjectFlags.Interface) {
       return serializeInterface(<ts.InterfaceType>type)
     } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
-      return { kind: Types.TypeKind.Reference, type: ts.createIdentifier("Object"), arguments: [] }      
+      return { kind: Types.TypeKind.Reference, type: ts.createIdentifier("Object"), arguments: [] }
     }
 
     throw new Error(`unknown object type: ${checker.typeToString(type)}`)
@@ -153,7 +153,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
 
 
-  
+
   let currentScope: ts.SourceFile | ts.CaseBlock | ts.ModuleBlock | ts.Block;
   function addDecorator(oldDecorators: ts.NodeArray<ts.Decorator> | undefined, exp: any) {
     let newDecorators = ts.createNodeArray<ts.Decorator>()
@@ -195,7 +195,9 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     for (const dec of node.decorators) {
       if (dec.kind == ts.SyntaxKind.Decorator) {
-        if (transformConfig.decoratorNames.indexOf(dec.expression.getText()) != -1) {
+        const declaration  = checker.getResolvedSignature(dec).declaration
+        const filename = declaration.getSourceFile().fileName;
+        if (filename.endsWith("tsruntime/src/types.ts") || filename.endsWith("tsruntime/dist/types.d.ts")) {
           return true
         }
       }
@@ -213,8 +215,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const newMembers = ts.visitNodes(node.members, visitClassMember);
 
     const type = checker.getTypeAtLocation(node)
-    
-    const classTypeExp =  makeLiteral(serializeType(type))
+
+    const classTypeExp = makeLiteral(serializeType(type))
     newNode.members = newMembers
     newNode.decorators = addDecorator(node.decorators, classTypeExp)
     return newNode
@@ -236,7 +238,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       case ts.SyntaxKind.ClassDeclaration:
         return visitClassDeclaration(<tse.ClassDeclaration>node)
       // case ts.SyntaxKind.Identifier:
-        // return node
+      // return node
       default:
         // console.log(node.kind)
         // return ts.visitEachChild(node, visitor, context)
@@ -257,24 +259,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
   return transform
 }
-
-/**
- * Configuration settings for the transformer.
- */
-export interface IConfig {
-  /** List of decorator names that mark classes to attach runtime data. */
-  decoratorNames?: string[]
-}
-
-class TransformConfig {
-  decoratorNames: string[] = ['Reflective'];
-
-  applyConfig(config: IConfig) {
-    this.decoratorNames = config.decoratorNames || this.decoratorNames;
-  }
-}
-
-const transformConfig: TransformConfig = new TransformConfig();
 
 
 

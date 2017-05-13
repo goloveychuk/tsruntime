@@ -1,22 +1,27 @@
+import {
+   getType,
+   mustGetType,
+} from '../src';
 
+import {ReflectiveFactory as ReflectiveFactory1 } from '../';
+import {ReflectiveFactory as ReflectiveFactory2} from '../src';;
 
-import {Reflective} from '../src/types'
+const UserDecorator1 = ReflectiveFactory2(function (target: any) { })
+const UserDecorator2 = ReflectiveFactory2(function (target: any) { })
 
-class Aasd<T> {
+function OtherDecorator(target: any) { }
 
+@UserDecorator1
+export class MyClass1 {
+    a: string;
 }
 
-// @Reflective
-// class Temp extends Aasd<string>{
-//     tuple: string | null = ''
-// }
-
-
-class Asd {
-    ads: string
+@UserDecorator2
+export class MyClass2 {
+    a: string;
 }
 
-@Reflective
-class Temp2 extends Asd {
-    tuple?: string
+@OtherDecorator
+export class MyClassB {
+    a: string;
 }

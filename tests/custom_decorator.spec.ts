@@ -1,15 +1,24 @@
 import {
    getType,
-   mustGetType
+   mustGetType,
 } from '../src';
 
+// import {ReflectiveFactory as ReflectiveFactory1 } from '../dist/types'; // todo don't work
+import {ReflectiveFactory as ReflectiveFactory2 } from '../src';;
+import {ReflectiveFactory as ReflectiveFactory1 } from '../src';;
 
-function UserDecorator(target: any) { }
+const UserDecorator1 = ReflectiveFactory1(function (target: any) { })
+const UserDecorator2 = ReflectiveFactory2(function (target: any) { })
 
 function OtherDecorator(target: any) { }
 
-@UserDecorator
-export class MyClassA {
+@UserDecorator1
+export class MyClass1 {
+    a: string;
+}
+
+@UserDecorator2
+export class MyClass2 {
     a: string;
 }
 
@@ -20,8 +29,13 @@ export class MyClassB {
 
 describe('Custom Decorators', () => {
    // Note UserDecorator is configured in webpack.test.js
-   it('should allow UserDecorator', () => {
-      const clsType = getType(MyClassA);
+   it('should allow UserDecorator imported from dist', () => {
+      const clsType = getType(MyClass1);
+      expect(clsType).not.toBeNull();
+   });
+
+   it('should allow UserDecorator imported from src', () => {
+      const clsType = getType(MyClass2);
       expect(clsType).not.toBeNull();
    });
 

@@ -106,9 +106,16 @@ export module Types {
 
 }
 
-export function Reflective(target: any) {
 
+export function ReflectiveFactory<T, T2>(fn: (arg: T) => T2) {
+  return (arg: T)=> fn(arg)
 }
+
+
+export const Reflective = ReflectiveFactory(function(target: any) {
+
+})
+
 
 
 export const MetadataKey = "tsruntime:type"
