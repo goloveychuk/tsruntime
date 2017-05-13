@@ -18,5 +18,5 @@ class Asd {
 
 @Reflective
 class Temp2 extends Asd {
-    tuple: string | null = ''
+    tuple?: string
 }

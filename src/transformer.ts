@@ -23,9 +23,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (type.initializer !== undefined) {
       assigns.push(ts.createPropertyAssignment("initializer", type.initializer))
     }
-    if (type.optional !== undefined) {
-      assigns.push(ts.createPropertyAssignment("optional", ts.createLiteral(type.optional)))
-    }
     switch (type.kind) {
       case Types.TypeKind.Boolean:
       case Types.TypeKind.Number:
@@ -176,8 +173,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (node.initializer !== undefined) {
       initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
     }
-
-    serializedType.optional = node.questionToken !== undefined
     serializedType.initializer = initializerExp
     const objLiteral = makeLiteral(serializedType)
     const newDecorators = addDecorator(node.decorators, objLiteral)
@@ -215,7 +210,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return node
     }
     const newNode = ts.getMutableClone(node);
-
     const newMembers = ts.visitNodes(node.members, visitClassMember);
 
     const type = checker.getTypeAtLocation(node)

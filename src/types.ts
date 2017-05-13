@@ -35,7 +35,6 @@ export module Types {
   export interface BaseType {
     kind: TypeKind
     initializer?: any //todo
-    optional?: boolean
   }
 
 
