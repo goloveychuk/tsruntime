@@ -9,6 +9,7 @@
     "test": "npm run build && karma start",
     "watch": "rimraf dist && tsc --watch --pretty",
     "watch:test": "npm run test -- --auto-watch --no-single-run",
+    "build:test_webpack": "webpack --config webpack.test.js",
     "build:test": "rimraf ./tests/build && rimraf ./tests/emit_output && tsc -p ./tests"
   },
   "repository": {

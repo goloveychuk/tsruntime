@@ -19,6 +19,13 @@ module.exports = function (options) {
 return {
    devtool: '#inline-source-map',
 
+   // note: not used by karma, but can be used
+   //   to help debug transform code by running webpack directly
+   entry: './tests/spec-bundle.js',
+   output: {
+     filename: './tests/build/test.bundle.js'
+   },
+
    resolve: {
       extensions: ['.ts', '.js'],
    },

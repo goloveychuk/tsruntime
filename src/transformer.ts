@@ -11,7 +11,12 @@ export function unwrap<T>(v: T | undefined, msg?: string) {
 }
 
 
-
+function writeError(node: ts.Node, msg: string, shouldThrow: boolean=true) {
+    const fname = node.getSourceFile().fileName;
+    const location = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart());
+    const node_text = node.getText();
+    console.warn(`\n\ntsruntime: ${msg}: ${fname} ${location.line}:${location.character}: ${node_text}\n`);
+  }
 
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
   const checker = program.getTypeChecker()
@@ -149,7 +154,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     } else if (type.flags & ts.TypeFlags.Union) {
       return serializeUnion(<ts.UnionType>type)
     }
-    throw new Error(`unknown type: ${checker.typeToString(type)}`)
+    // writeError(type `unknown type: ${checker.typeToString(type)}`, false)
+    return {kind: Types.TypeKind.Unknown}
   }
 
 

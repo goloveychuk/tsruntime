@@ -17,13 +17,30 @@ export class MyClass1 {
     a: string;
 }
 
-@UserDecorator2
-export class MyClass2 {
+export const ParamDecorator = ReflectiveFactory1(function (params: {
+                           strParam: string,
+                        }): Function {
+/* tslint:enable:ext-variable-name */
+   return function innerDecorator(ctor: Function): void {
+      // Graft on other metadata information
+      (ctor as any).StrParam = params.strParam;
+   };
+})
+
+@UserDecorator
+export class MyClassA {
     a: string;
 }
 
 @OtherDecorator
 export class MyClassB {
+    a: string;
+}
+
+@ParamDecorator({
+    strParam: 'string_value',
+})
+export class ParamClass {
     a: string;
 }
 
@@ -43,6 +60,11 @@ describe('Custom Decorators', () => {
       expect(() => {
           mustGetType(MyClassB);
       }).toThrow();
+   });
+
+   it('should allow decorators with params', () => {
+      const clsType = mustGetType(ParamClass);
+      expect((ParamClass as any).StrParam).toEqual('string_value');
    });
 
 });
