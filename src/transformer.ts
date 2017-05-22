@@ -1,22 +1,19 @@
 
 import * as ts from 'typescript';
-import { Types, MetadataKey } from './types';
+import { Types, MetadataKey, REFLECTIVE_KEY } from './types';
 import * as tse from './typescript-extended'
 
-export function unwrap<T>(v: T | undefined, msg?: string) {
-  if (v === undefined) {
-    throw new Error(msg || "v is undefined")
-  }
-  return v
+type Ctx = {
+  node: ts.Node
 }
 
+function writeWarning(node: ts.Node, msg: string) {
+  const fname = node.getSourceFile().fileName;
+  const location = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart());
+  const node_text = node.getText();
+  console.warn(`\n\ntsruntime: ${msg}: ${fname} ${location.line}:${location.character}: ${node_text}\n`);
+}
 
-function writeError(node: ts.Node, msg: string, shouldThrow: boolean=true) {
-    const fname = node.getSourceFile().fileName;
-    const location = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart());
-    const node_text = node.getText();
-    console.warn(`\n\ntsruntime: ${msg}: ${fname} ${location.line}:${location.character}: ${node_text}\n`);
-  }
 
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
   const checker = program.getTypeChecker()
@@ -75,11 +72,11 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return { kind: Types.TypeKind.Reference, type: typeName, arguments: [] }
   }
 
-  function serializeReference(type: ts.TypeReference): Types.Type {
+  function serializeReference(type: ts.TypeReference, ctx: Ctx): Types.Type {
     const typeArgs = type.typeArguments;
     let allTypes: Types.Type[] = [];
     if (typeArgs !== undefined) {
-      allTypes = typeArgs.map(t => serializeType(t))
+      allTypes = typeArgs.map(t => serializeType(t, ctx))
     }
     const target = type.target;
     if (target.objectFlags & ts.ObjectFlags.Tuple) {
@@ -94,41 +91,41 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return { kind: Types.TypeKind.Reference, arguments: allTypes, type: typeName }
     }
   }
-  function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers): Types.Type {
+  function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers, ctx: Ctx): Types.Type {
     const parent = type.getSymbol();
     type.getProperties() //to fill declared props
     let props = type.declaredProperties.map(prop => prop.getName())
     const base = type.getBaseTypes()
     let extendsCls: Types.Type | undefined;
     if (base.length > 0) {
-      extendsCls = serializeType(base[0])
+      extendsCls = serializeType(base[0], ctx)
     }
     return { kind: Types.TypeKind.Class, props, extends: extendsCls }
   }
 
-  function serializeObject(type: ts.ObjectType): Types.Type {
+  function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {
     if (type.objectFlags & ts.ObjectFlags.Class) {
-      return serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type)
+      return serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type, ctx)
     }
     if (type.objectFlags & ts.ObjectFlags.Reference) {
-      return serializeReference(<ts.TypeReference>type)
+      return serializeReference(<ts.TypeReference>type, ctx)
     } else if (type.objectFlags & ts.ObjectFlags.Interface) {
       return serializeInterface(<ts.InterfaceType>type)
     } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
       return { kind: Types.TypeKind.Reference, type: ts.createIdentifier("Object"), arguments: [] }
     }
-
-    throw new Error(`unknown object type: ${checker.typeToString(type)}`)
+    writeWarning(ctx.node, `unknown object type: ${checker.typeToString(type)}`)
+    return { kind: Types.TypeKind.Unknown }
   }
 
 
 
-  function serializeUnion(type: ts.UnionType): Types.Type {
-    const nestedTypes = type.types.map(t => serializeType(t))
+  function serializeUnion(type: ts.UnionType, ctx: Ctx): Types.Type {
+    const nestedTypes = type.types.map(t => serializeType(t, ctx))
     return { kind: Types.TypeKind.Union, types: nestedTypes }
   }
 
-  function serializeType(type: ts.Type): Types.Type {
+  function serializeType(type: ts.Type, ctx: Ctx): Types.Type {
     if (type.flags & ts.TypeFlags.Any) {
       return { kind: Types.TypeKind.Any }
     } else if (type.flags & ts.TypeFlags.String) {
@@ -150,12 +147,12 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     } else if (type.flags & ts.TypeFlags.Never) {
       return { kind: Types.TypeKind.Never }
     } else if (type.flags & ts.TypeFlags.Object) {
-      return serializeObject(<ts.ObjectType>type)
+      return serializeObject(<ts.ObjectType>type, ctx)
     } else if (type.flags & ts.TypeFlags.Union) {
-      return serializeUnion(<ts.UnionType>type)
+      return serializeUnion(<ts.UnionType>type, ctx)
     }
-    // writeError(type `unknown type: ${checker.typeToString(type)}`, false)
-    return {kind: Types.TypeKind.Unknown}
+    writeWarning(ctx.node, `unknown type: ${checker.typeToString(type)}`)
+    return { kind: Types.TypeKind.Unknown }
   }
 
 
@@ -174,7 +171,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
   function visitPropertyDeclaration(node: tse.PropertyDeclaration) {
     const type = checker.getTypeAtLocation(node)
-    let serializedType = serializeType(type)
+    let serializedType = serializeType(type, { node })
     let initializerExp;
     if (node.initializer !== undefined) {
       initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
@@ -201,11 +198,11 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     for (const dec of node.decorators) {
       if (dec.kind == ts.SyntaxKind.Decorator) {
-        const declaration  = checker.getResolvedSignature(dec).declaration
-        const filename = declaration.getSourceFile().fileName;
-        if (filename.endsWith("tsruntime/src/types.ts") || filename.endsWith("tsruntime/dist/types.d.ts")) {
+        const decType = checker.getTypeAtLocation(dec.expression)
+        if (decType.getProperty(REFLECTIVE_KEY) !== undefined) {
           return true
         }
+
       }
     }
     return false
@@ -222,7 +219,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
     const type = checker.getTypeAtLocation(node)
 
-    const classTypeExp = makeLiteral(serializeType(type))
+    const classTypeExp = makeLiteral(serializeType(type, { node }))
     newNode.members = newMembers
     newNode.decorators = addDecorator(node.decorators, classTypeExp)
     return newNode

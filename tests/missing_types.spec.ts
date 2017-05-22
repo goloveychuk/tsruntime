@@ -65,7 +65,7 @@ describe('Missing Support', () => {
    it('should support "type of" types', () => {
       // should allow supporting type of types
       const type_prop_type = getPropType(TestClass, "type_prop") as Types.UnknownType;
-      expect(type_prop_type.kind).toBe(Types.TypeKind.Unknown);
+      expect(type_prop_type.kind).toBe(Types.TypeKind.Reference);
    });
 
    it('should support class union arrays', () => {
@@ -73,7 +73,7 @@ describe('Missing Support', () => {
       const children_type = getPropType(ParentClass, "children") as Types.ReferenceType;
       expect(children_type.kind).toBe(Types.TypeKind.Reference);
       expect(children_type.type).toEqual(Array);
-      expect(children_type.arguments[0].kind).toBe(Types.TypeKind.Unknown);
+      expect(children_type.arguments[0].kind).toBe(Types.TypeKind.Union);
    });
 
    it('should work nested', () => {

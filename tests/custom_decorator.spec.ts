@@ -1,11 +1,10 @@
 import {
-   getType,
-   mustGetType,
+    getType,
+    mustGetType,
 } from '../src';
 
-// import {ReflectiveFactory as ReflectiveFactory1 } from '../dist/types'; // todo don't work
-import {ReflectiveFactory as ReflectiveFactory2 } from '../src';;
-import {ReflectiveFactory as ReflectiveFactory1 } from '../src';;
+import { ReflectiveFactory as ReflectiveFactory1 } from '../dist/types'; // todo don't work
+import { ReflectiveFactory as ReflectiveFactory2 } from '../src';;
 
 const UserDecorator1 = ReflectiveFactory1(function (target: any) { })
 const UserDecorator2 = ReflectiveFactory2(function (target: any) { })
@@ -17,23 +16,23 @@ export class MyClass1 {
     a: string;
 }
 
-export const ParamDecorator = ReflectiveFactory1(function (params: {
-                           strParam: string,
-                        }): Function {
-/* tslint:enable:ext-variable-name */
-   return function innerDecorator(ctor: Function): void {
-      // Graft on other metadata information
-      (ctor as any).StrParam = params.strParam;
-   };
-})
-
-@UserDecorator
-export class MyClassA {
-    a: string;
+export function ParamDecorator(params: {
+    strParam: string,
+}) {
+    /* tslint:enable:ext-variable-name */
+    return ReflectiveFactory1(function innerDecorator(ctor: Function): void {
+        // Graft on other metadata information
+        (ctor as any).StrParam = params.strParam;
+    })
 }
 
+export class MyClassUndecorated {
+
+}
+
+
 @OtherDecorator
-export class MyClassB {
+export class MyClass2 {
     a: string;
 }
 
@@ -45,27 +44,27 @@ export class ParamClass {
 }
 
 describe('Custom Decorators', () => {
-   // Note UserDecorator is configured in webpack.test.js
-   it('should allow UserDecorator imported from dist', () => {
-      const clsType = getType(MyClass1);
-      expect(clsType).not.toBeNull();
-   });
+    // Note UserDecorator is configured in webpack.test.js
+    it('should allow UserDecorator imported from dist', () => {
+        const clsType = getType(MyClass1);
+        expect(clsType).not.toBeNull();
+    });
 
-   it('should allow UserDecorator imported from src', () => {
-      const clsType = getType(MyClass2);
-      expect(clsType).not.toBeNull();
-   });
+    it('should allow UserDecorator imported from src', () => {
+        const clsType = getType(MyClass2);
+        expect(clsType).not.toBeNull();
+    });
 
-   it('should throw on non-decorated', () => {
-      expect(() => {
-          mustGetType(MyClassB);
-      }).toThrow();
-   });
+    it('should throw on non-decorated', () => {
+        expect(() => {
+            mustGetType(MyClassUndecorated);
+        }).toThrow();
+    });
 
-   it('should allow decorators with params', () => {
-      const clsType = mustGetType(ParamClass);
-      expect((ParamClass as any).StrParam).toEqual('string_value');
-   });
+    it('should allow decorators with params', () => {
+        const clsType = mustGetType(ParamClass);
+        expect((ParamClass as any).StrParam).toEqual('string_value');
+    });
 
 });
 

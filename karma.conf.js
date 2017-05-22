@@ -26,8 +26,8 @@ module.exports = function(config) {
     autoWatch: false,
 
     browsers: [
-      // 'Chrome',
-      'ChromeHeadless',
+      'Chrome',
+      // 'ChromeHeadless',
     ],
 
     customLaunchers: {
