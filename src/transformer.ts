@@ -5,7 +5,10 @@ import * as tse from './typescript-extended'
 
 type Ctx = {
   node: ts.Node
+  // referencedSet: Set<string>
 }
+
+
 
 function writeWarning(node: ts.Node, msg: string) {
   const fname = node.getSourceFile().fileName;
@@ -16,6 +19,23 @@ function writeWarning(node: ts.Node, msg: string) {
 
 
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
+  let ReferencedSet = new Set<string>()
+
+  ////hack (99
+  const emitResolver = (<tse.TransformationContext>context).getEmitResolver()
+  const oldIsReferenced = emitResolver.isReferencedAliasDeclaration
+  emitResolver.isReferencedAliasDeclaration = function(node: ts.Node, checkChildren?: boolean) {
+    const res =  oldIsReferenced(node, checkChildren)
+    if (res === true) {
+      return true
+    }
+    if (node.kind === ts.SyntaxKind.ImportSpecifier) {
+      const name = (<ts.ImportSpecifier>node).name
+      return ReferencedSet.has(name.getText())
+    }
+    return true
+  }
+  // hack
   const checker = program.getTypeChecker()
   function makeLiteral(type: Types.Type) {
     const assigns = []
@@ -47,6 +67,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         break
       case Types.TypeKind.Class:
+        assigns.push(ts.createPropertyAssignment("type", type.type))      
         assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(ts.createLiteral))))
         if (type.extends !== undefined) {
           assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
@@ -59,6 +80,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const typeIdentifier = ts.createIdentifier(symbol.getName())
     typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
     typeIdentifier.parent = currentScope;
+    const val = symbol.valueDeclaration
+    ReferencedSet.add(symbol.getName())
     return typeIdentifier
   }
 
@@ -92,7 +115,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
   }
   function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers, ctx: Ctx): Types.Type {
-    const parent = type.getSymbol();
     type.getProperties() //to fill declared props
     let props = type.declaredProperties.map(prop => prop.getName())
     const base = type.getBaseTypes()
@@ -100,7 +122,9 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (base.length > 0) {
       extendsCls = serializeType(base[0], ctx)
     }
-    return { kind: Types.TypeKind.Class, props, extends: extendsCls }
+    const typeName = getIdentifierForSymbol(type.getSymbol())
+    
+    return { kind: Types.TypeKind.Class, type: typeName,  props, extends: extendsCls }
   }
 
   function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {
@@ -240,16 +264,16 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     switch (node.kind) {
       case ts.SyntaxKind.ClassDeclaration:
         return visitClassDeclaration(<tse.ClassDeclaration>node)
-      // case ts.SyntaxKind.Identifier:
-      // return node
-      default:
-        // console.log(node.kind)
-        // return ts.visitEachChild(node, visitor, context)
+      case ts.SyntaxKind.Parameter: //to avoid lexical env error
         return node
+      default:  
+        return ts.visitEachChild(node, visitor, context)
+
     }
   }
 
   function transform(sourceI: ts.SourceFile): ts.SourceFile {
+    ReferencedSet = new Set<string>()
     const source = sourceI as tse.SourceFile
     if (source.isDeclarationFile) {
       return source

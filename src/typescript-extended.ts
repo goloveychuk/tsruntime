@@ -22,6 +22,7 @@ export enum TypeReferenceSerializationKind {
 }
 
 export interface EmitResolver {
+    isReferencedAliasDeclaration(node: ts.Node, checkChildren?: boolean): boolean;
     hasGlobalName(name: string): boolean;
     getReferencedExportContainer(node: ts.Identifier, prefixLocals?: boolean): ts.SourceFile | ts.ModuleDeclaration | ts.EnumDeclaration;
     getReferencedImportDeclaration(node: ts.Identifier): ts.Declaration;
