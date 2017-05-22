@@ -24,8 +24,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   ////hack (99
   const emitResolver = (<tse.TransformationContext>context).getEmitResolver()
   const oldIsReferenced = emitResolver.isReferencedAliasDeclaration
-  emitResolver.isReferencedAliasDeclaration = function(node: ts.Node, checkChildren?: boolean) {
-    const res =  oldIsReferenced(node, checkChildren)
+  emitResolver.isReferencedAliasDeclaration = function (node: ts.Node, checkChildren?: boolean) {
+    const res = oldIsReferenced(node, checkChildren)
     if (res === true) {
       return true
     }
@@ -67,7 +67,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         break
       case Types.TypeKind.Class:
-        assigns.push(ts.createPropertyAssignment("type", type.type))      
         assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(ts.createLiteral))))
         if (type.extends !== undefined) {
           assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
@@ -122,15 +121,12 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (base.length > 0) {
       extendsCls = serializeType(base[0], ctx)
     }
-    const typeName = getIdentifierForSymbol(type.getSymbol())
-    
-    return { kind: Types.TypeKind.Class, type: typeName,  props, extends: extendsCls }
+
+    return { kind: Types.TypeKind.Class,  props, extends: extendsCls }
   }
 
   function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {
-    if (type.objectFlags & ts.ObjectFlags.Class) { //move this only for getting class type todo this dont work for properties, because 
-      return serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type, ctx)
-    } else  if (type.objectFlags & ts.ObjectFlags.Reference) {
+    if (type.objectFlags & ts.ObjectFlags.Reference) {
       return serializeReference(<ts.TypeReference>type, ctx)
     } else if (type.objectFlags & ts.ObjectFlags.Interface) {
       return serializeInterface(<ts.InterfaceType>type)
@@ -241,8 +237,9 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const newMembers = ts.visitNodes(node.members, visitClassMember);
 
     const type = checker.getTypeAtLocation(node)
+    let serializedType = serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type, { node })
 
-    const classTypeExp = makeLiteral(serializeType(type, { node }))
+    const classTypeExp = makeLiteral(serializedType)
     newNode.members = newMembers
     newNode.decorators = addDecorator(node.decorators, classTypeExp)
     return newNode
@@ -265,7 +262,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         return visitClassDeclaration(<tse.ClassDeclaration>node)
       case ts.SyntaxKind.Parameter: //to avoid lexical env error
         return node
-      default:  
+      default:
         return ts.visitEachChild(node, visitor, context)
 
     }
