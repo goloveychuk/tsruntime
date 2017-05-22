@@ -128,10 +128,9 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
 
   function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {
-    if (type.objectFlags & ts.ObjectFlags.Class) {
+    if (type.objectFlags & ts.ObjectFlags.Class) { //move this only for getting class type todo this dont work for properties, because 
       return serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type, ctx)
-    }
-    if (type.objectFlags & ts.ObjectFlags.Reference) {
+    } else  if (type.objectFlags & ts.ObjectFlags.Reference) {
       return serializeReference(<ts.TypeReference>type, ctx)
     } else if (type.objectFlags & ts.ObjectFlags.Interface) {
       return serializeInterface(<ts.InterfaceType>type)
