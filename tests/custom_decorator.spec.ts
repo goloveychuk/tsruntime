@@ -20,7 +20,7 @@ export function ParamDecorator(params: {
     strParam: string,
 }) {
     /* tslint:enable:ext-variable-name */
-    return ReflectiveFactory1(function innerDecorator(ctor: Function): void {
+    return ReflectiveFactory2(function innerDecorator(ctor: Function): void { //todo dont work with factory1
         // Graft on other metadata information
         (ctor as any).StrParam = params.strParam;
     })
