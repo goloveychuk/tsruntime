@@ -8,18 +8,15 @@ import {
 
 import { ExportedCls } from './module'
 
-class Asd2 extends ExportedCls {
-    asd: 'sadf'
-}
-function asd() {
+
 
     @Reflective
-    class Asd3<T> extends Asd2 {
+    class Asd3<T>  {
         fasd: string
+        method() {
+
+        }
+        fsad = 'fasd'
     }
-    @Reflective
-    class Asd {
-        ref: Asd3<string>
-    }
-}
+    
 

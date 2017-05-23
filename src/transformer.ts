@@ -113,16 +113,15 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return { kind: Types.TypeKind.Reference, arguments: allTypes, type: typeName }
     }
   }
-  function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers, ctx: Ctx): Types.Type {
-    type.getProperties() //to fill declared props
-    let props = type.declaredProperties.map(prop => prop.getName())
+  function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers, allprops: string[], ctx: Ctx): Types.Type {
+
     const base = type.getBaseTypes()
     let extendsCls: Types.Type | undefined;
     if (base.length > 0) {
       extendsCls = serializeType(base[0], ctx)
     }
 
-    return { kind: Types.TypeKind.Class,  props, extends: extendsCls }
+    return { kind: Types.TypeKind.Class,  props: allprops, extends: extendsCls }
   }
 
   function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {
@@ -188,7 +187,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return newDecorators
   }
 
-  function visitPropertyDeclaration(node: tse.PropertyDeclaration) {
+  function visitPropertyDeclaration(node: tse.PropertyDeclaration, allprops: string[]) {
+    allprops.push(node.name.getText())
     const type = checker.getTypeAtLocation(node)
     let serializedType = serializeType(type, { node })
     let initializerExp;
@@ -202,10 +202,10 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     newNode.decorators = newDecorators
     return newNode
   }
-  function visitClassMember(node: ts.Node) {
+  function visitClassMember(node: ts.Node, allprops:string[]) {
     switch (node.kind) {
       case ts.SyntaxKind.PropertyDeclaration:
-        return visitPropertyDeclaration(<tse.PropertyDeclaration>node)
+        return visitPropertyDeclaration(<tse.PropertyDeclaration>node, allprops)
       default:
         return node
     }
@@ -233,13 +233,16 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (!shouldReflect(node)) {
       return node
     }
-    const newNode = ts.getMutableClone(node);
-    const newMembers = ts.visitNodes(node.members, visitClassMember);
+    const allprops = new Array<string>()
+
+    const newMembers = ts.visitNodes(node.members, nod => visitClassMember(nod, allprops));
 
     const type = checker.getTypeAtLocation(node)
-    let serializedType = serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type, { node })
+    let serializedType = serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type, allprops, { node })
 
     const classTypeExp = makeLiteral(serializedType)
+
+    const newNode = ts.getMutableClone(node);
     newNode.members = newMembers
     newNode.decorators = addDecorator(node.decorators, classTypeExp)
     return newNode

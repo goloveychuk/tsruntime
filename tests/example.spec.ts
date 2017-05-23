@@ -40,7 +40,7 @@ describe('Example works', () => {
 
       const dType = getPropType(StatsModel, "d")
       expect(dType).not.toBeNull();
-      expect(dType.kind).toEqual(TypeKind.Union);
+      expect((dType as Types.Type).kind).toEqual(TypeKind.Union);
    });
 
 });
