@@ -153,6 +153,6 @@ export function mustGetPropType(target: Function, propertyKey: string | symbol):
 
 
 
-export function getPropType(target: Function, propertyKey: string | symbol) {
+export function getPropType(target: Function, propertyKey: string | symbol):  Types.Type | undefined {
   return Reflect.getMetadata(MetadataKey, target.prototype, propertyKey)
 }
