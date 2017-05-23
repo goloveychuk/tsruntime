@@ -3,19 +3,23 @@ import {
     mustGetType,
 } from '../src';
 import {
-   Reflective
+    Reflective
 } from '../src';
 
-import {ExportedCls} from './module'
+import { ExportedCls } from './module'
 
 class Asd2 extends ExportedCls {
     asd: 'sadf'
 }
-@Reflective
-class Asd3<T> extends Asd2 {
-    fasd: string
+function asd() {
+
+    @Reflective
+    class Asd3<T> extends Asd2 {
+        fasd: string
+    }
+    @Reflective
+    class Asd {
+        ref: Asd3<string>
+    }
 }
-@Reflective
-class Asd {
-    ref: Asd3<string>
-}
+

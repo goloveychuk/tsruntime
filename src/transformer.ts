@@ -247,9 +247,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   function onBeforeVisitNode(node: ts.Node) {
     switch (node.kind) {
       case ts.SyntaxKind.SourceFile:
-      case ts.SyntaxKind.CaseBlock:
       case ts.SyntaxKind.ModuleBlock:
-      case ts.SyntaxKind.Block:
         currentScope = <ts.SourceFile | ts.CaseBlock | ts.ModuleBlock | ts.Block>node;
         // currentScopeFirstDeclarationsOfName = undefined;
         break;
@@ -260,10 +258,14 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     switch (node.kind) {
       case ts.SyntaxKind.ClassDeclaration:
         return visitClassDeclaration(<tse.ClassDeclaration>node)
-      case ts.SyntaxKind.Parameter: //to avoid lexical env error
-        return node
-      default:
+      case ts.SyntaxKind.ModuleDeclaration:
+      case ts.SyntaxKind.ModuleBlock:
+      case ts.SyntaxKind.FunctionDeclaration:
+      case ts.SyntaxKind.FunctionExpression:
+      case ts.SyntaxKind.Block:
         return ts.visitEachChild(node, visitor, context)
+      default:
+        return node
 
     }
   }
