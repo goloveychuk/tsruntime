@@ -77,7 +77,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return ts.createObjectLiteral(assigns)
   }
   function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
-    // const name = checker.typeToString(type, ctx.node)
+    const name = checker.typeToString(type, ctx.node)
     const typeIdentifier = ts.createIdentifier(name)
     typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
     typeIdentifier.parent = currentScope;
