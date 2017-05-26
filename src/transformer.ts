@@ -31,6 +31,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     if (node.kind === ts.SyntaxKind.ImportSpecifier) {
       const name = (<ts.ImportSpecifier>node).name
+      // const symb = checker.getSymbolAtLocation(name)
       return ReferencedSet.has(name.getText())
     }
     return true
@@ -45,12 +46,12 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (type.initializer !== undefined) {
       assigns.push(ts.createPropertyAssignment("initializer", type.initializer))
     }
+
+    
     switch (type.kind) {
-      case Types.TypeKind.Boolean:
-      case Types.TypeKind.Number:
-      case Types.TypeKind.String:
-      case Types.TypeKind.Null:
-      case Types.TypeKind.Undefined:
+      case Types.TypeKind.Enum:
+        assigns.push(ts.createPropertyAssignment("type", type.type))
+      
         break
       case Types.TypeKind.Interface:
         assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
@@ -75,22 +76,23 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     return ts.createObjectLiteral(assigns)
   }
-  function getIdentifierForSymbol(symbol: ts.Symbol): ts.Identifier {
-    const typeIdentifier = ts.createIdentifier(symbol.getName())
+  function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
+    // const name = checker.typeToString(type, ctx.node)
+    const typeIdentifier = ts.createIdentifier(name)
     typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
     typeIdentifier.parent = currentScope;
-    const val = symbol.valueDeclaration
-    ReferencedSet.add(symbol.getName())
+    ReferencedSet.add(name)
     return typeIdentifier
   }
 
 
-  function serializeInterface(type: ts.InterfaceType): Types.Type {
+  function serializeInterface(type: ts.InterfaceType, ctx: Ctx): Types.Type {
     const symbol = type.getSymbol()
     if (symbol.valueDeclaration === undefined) {
       return { kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: [] }
     }
-    const typeName = getIdentifierForSymbol(symbol)
+    
+    const typeName = getIdentifierForSymbol(type, ctx)
     return { kind: Types.TypeKind.Reference, type: typeName, arguments: [] }
   }
 
@@ -109,7 +111,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return { kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: allTypes }
 
     } else {
-      const typeName = getIdentifierForSymbol(symbol)
+      const typeName = getIdentifierForSymbol(type, ctx)
       return { kind: Types.TypeKind.Reference, arguments: allTypes, type: typeName }
     }
   }
@@ -128,7 +130,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (type.objectFlags & ts.ObjectFlags.Reference) {
       return serializeReference(<ts.TypeReference>type, ctx)
     } else if (type.objectFlags & ts.ObjectFlags.Interface) {
-      return serializeInterface(<ts.InterfaceType>type)
+      return serializeInterface(<ts.InterfaceType>type, ctx)
     } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
       return { kind: Types.TypeKind.Reference, type: ts.createIdentifier("Object"), arguments: [] }
     }
@@ -143,6 +145,11 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return { kind: Types.TypeKind.Union, types: nestedTypes }
   }
 
+  function serializeEnum(type: ts.EnumType, ctx: Ctx): Types.Type {
+    const typeName = getIdentifierForSymbol(type, ctx)
+    return { kind: Types.TypeKind.Enum, type: typeName }
+  }
+
   function serializeType(type: ts.Type, ctx: Ctx): Types.Type {
     if (type.flags & ts.TypeFlags.Any) {
       return { kind: Types.TypeKind.Any }
@@ -153,7 +160,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     } else if (type.flags & ts.TypeFlags.Boolean) {
       return { kind: Types.TypeKind.Boolean }
     } else if (type.flags & ts.TypeFlags.Enum) {
-      return { kind: Types.TypeKind.Enum }
+      return serializeEnum(<ts.EnumType>type, ctx)
     } else if (type.flags & ts.TypeFlags.ESSymbol) {
       return { kind: Types.TypeKind.ESSymbol }
     } else if (type.flags & ts.TypeFlags.Void) {

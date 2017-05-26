@@ -6,17 +6,19 @@ import {
     Reflective
 } from '../src';
 
-import { ExportedCls } from './module'
+import { ExportedCls as ECls } from './module' //todo aliasing
 
+enum Asd {
+    a= 1,
+    b,
+    c
+}
+// let a  = asd
 
+@Reflective
+class Asd3  {
+    ad = new ECls()
+    a: Asd
+}
 
-    @Reflective
-    class Asd3<T>  {
-        fasd: string
-        method() {
-
-        }
-        fsad = 'fasd'
-    }
-    
 
