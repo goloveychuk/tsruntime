@@ -47,11 +47,11 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       assigns.push(ts.createPropertyAssignment("initializer", type.initializer))
     }
 
-    
+
     switch (type.kind) {
       case Types.TypeKind.Enum:
         assigns.push(ts.createPropertyAssignment("type", type.type))
-      
+
         break
       case Types.TypeKind.Interface:
         assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
@@ -77,7 +77,19 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return ts.createObjectLiteral(assigns)
   }
   function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
-    const name = checker.typeToString(type, ctx.node)
+    let name: string
+
+    const typenode = checker.typeToTypeNode(type, ctx.node)
+
+    switch (typenode.kind) {
+      case ts.SyntaxKind.TypeReference:
+        const typename = (<ts.TypeReferenceNode>typenode).typeName
+        name = (<ts.Identifier>typename).text
+        break
+      default:
+        name = type.getSymbol().getName()
+        console.log(name)
+    }
     const typeIdentifier = ts.createIdentifier(name)
     typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
     typeIdentifier.parent = currentScope;
@@ -91,7 +103,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (symbol.valueDeclaration === undefined) {
       return { kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: [] }
     }
-    
+
     const typeName = getIdentifierForSymbol(type, ctx)
     return { kind: Types.TypeKind.Reference, type: typeName, arguments: [] }
   }
@@ -111,7 +123,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return { kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: allTypes }
 
     } else {
-      const typeName = getIdentifierForSymbol(type, ctx)
+      const typeName = getIdentifierForSymbol(target, ctx)
       return { kind: Types.TypeKind.Reference, arguments: allTypes, type: typeName }
     }
   }
@@ -123,7 +135,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       extendsCls = serializeType(base[0], ctx)
     }
 
-    return { kind: Types.TypeKind.Class,  props: allprops, extends: extendsCls }
+    return { kind: Types.TypeKind.Class, props: allprops, extends: extendsCls }
   }
 
   function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {
@@ -209,7 +221,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     newNode.decorators = newDecorators
     return newNode
   }
-  function visitClassMember(node: ts.Node, allprops:string[]) {
+  function visitClassMember(node: ts.Node, allprops: string[]) {
     switch (node.kind) {
       case ts.SyntaxKind.PropertyDeclaration:
         return visitPropertyDeclaration(<tse.PropertyDeclaration>node, allprops)
