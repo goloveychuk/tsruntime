@@ -8,7 +8,9 @@ type Ctx = {
   // referencedSet: Set<string>
 }
 
-
+function getSymbolId(symb: ts.Symbol): number {
+  return (symb as any as {id: number}).id
+}
 
 function writeWarning(node: ts.Node, msg: string) {
   const fname = node.getSourceFile().fileName;
@@ -19,7 +21,7 @@ function writeWarning(node: ts.Node, msg: string) {
 
 
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
-  let ReferencedSet = new Set<string>()
+  let ReferencedSet = new Set<number>()
 
   ////hack (99
   const emitResolver = (<tse.TransformationContext>context).getEmitResolver()
@@ -31,8 +33,9 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     if (node.kind === ts.SyntaxKind.ImportSpecifier) {
       const name = (<ts.ImportSpecifier>node).name
+      const origSymb = checker.getAliasedSymbol(checker.getSymbolAtLocation(name))
       // const symb = checker.getSymbolAtLocation(name)
-      return ReferencedSet.has(name.getText())
+      return ReferencedSet.has(getSymbolId(origSymb))
     }
     return true
   }
@@ -85,6 +88,11 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       case ts.SyntaxKind.TypeReference:
         const typename = (<ts.TypeReferenceNode>typenode).typeName
         name = (<ts.Identifier>typename).text
+        let origSymb = type.getSymbol()
+        if (origSymb.getFlags() & ts.SymbolFlags.Alias) {
+          origSymb = checker.getAliasedSymbol(origSymb)
+        }
+        ReferencedSet.add(getSymbolId(origSymb))
         break
       default:
         name = type.getSymbol().getName()
@@ -93,7 +101,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const typeIdentifier = ts.createIdentifier(name)
     typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
     typeIdentifier.parent = currentScope;
-    ReferencedSet.add(name)
     return typeIdentifier
   }
 
@@ -293,7 +300,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
 
   function transform(sourceI: ts.SourceFile): ts.SourceFile {
-    ReferencedSet = new Set<string>()
+    ReferencedSet = new Set<number>()
     const source = sourceI as tse.SourceFile
     if (source.isDeclarationFile) {
       return source
