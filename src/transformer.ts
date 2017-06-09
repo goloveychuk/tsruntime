@@ -71,6 +71,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         break
       case Types.TypeKind.Class:
+        assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))      
         assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(ts.createLiteral))))
         if (type.extends !== undefined) {
           assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
@@ -142,7 +143,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       extendsCls = serializeType(base[0], ctx)
     }
 
-    return { kind: Types.TypeKind.Class, props: allprops, extends: extendsCls }
+    return { kind: Types.TypeKind.Class, name: type.getSymbol().getName(), props: allprops, extends: extendsCls }
   }
 
   function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {

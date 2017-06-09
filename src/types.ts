@@ -103,6 +103,7 @@ export module Types {
 
   export interface ClassType extends BaseType {
     kind: TypeKind.Class
+    name: string
     props: string[]
     extends?: Types.Type
   }
