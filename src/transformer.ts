@@ -97,7 +97,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         break
       default:
         name = type.getSymbol().getName()
-        console.log(name)
     }
     const typeIdentifier = ts.createIdentifier(name)
     typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
