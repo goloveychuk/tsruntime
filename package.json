@@ -39,7 +39,7 @@
     "karma-webpack": "~2.0.3",
     "reflect-metadata": "^0.1.10",
     "rimraf": "^2.6.1",
-    "typescript": "^2.3.2",
+    "typescript": "2.4.1",
     "webpack": "2.2.0"
   }
 }

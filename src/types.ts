@@ -71,7 +71,7 @@ export module Types {
 
   export interface EnumType extends BaseType {
     kind: TypeKind.Enum
-    type: any
+    options: (string|number)[]
   }
   export interface ESSymbolType extends BaseType {
     kind: TypeKind.ESSymbol
