@@ -9,7 +9,7 @@ type Ctx = {
 }
 
 function getSymbolId(symb: ts.Symbol): number {
-  return (symb as any as {id: number}).id
+  return (symb as any as { id: number }).id
 }
 
 function writeWarning(node: ts.Node, msg: string) {
@@ -17,6 +17,64 @@ function writeWarning(node: ts.Node, msg: string) {
   const location = node.getSourceFile().getLineAndCharacterOfPosition(node.getStart());
   const node_text = node.getText();
   console.warn(`\n\ntsruntime: ${msg}: ${fname} ${location.line}:${location.character}: ${node_text}\n`);
+}
+
+module Normalizers {
+  function normalizeBooleans(types: Types.Type[]): Types.Type[] {
+    let hasFalse = false;
+    let hasTrue = false;
+    let hasBoolean = false;
+
+    for (const type of types) {
+      switch (type.kind) {
+        case Types.TypeKind.FalseLiteral:
+          hasFalse = true
+          break
+        case Types.TypeKind.TrueLiteral:
+          hasTrue = true
+          break
+        case Types.TypeKind.Boolean:
+          hasBoolean = true
+          break
+      }
+    }
+
+    if (hasBoolean || (hasTrue && hasFalse)) {
+      return [
+        { kind: Types.TypeKind.Boolean }
+      ]
+    }
+    return types
+  }
+
+  export function normalizeUnion(types: Types.Type[]) {
+    const booleans: Types.Type[] = []
+    const okTypes: Types.Type[] = []
+
+    types.forEach(type => {
+
+      switch (type.kind) {
+        case Types.TypeKind.FalseLiteral:
+        case Types.TypeKind.TrueLiteral:
+        case Types.TypeKind.Boolean:
+          booleans.push(type)
+          break
+        default:
+          okTypes.push(type)
+          break
+      }
+    })
+
+    const normalizedTypes: Types.Type[] = []
+
+
+    if (booleans.length > 0) {
+      normalizedTypes.push(...normalizeBooleans(booleans))
+    }
+
+    return okTypes.concat(normalizedTypes)
+  }
+
 }
 
 
@@ -70,7 +128,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         break
       case Types.TypeKind.Class:
-        assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))      
+        assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
         assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(ts.createLiteral))))
         if (type.extends !== undefined) {
           assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
@@ -160,7 +218,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
   function serializeUnion(type: ts.UnionType, ctx: Ctx): Types.Type {
     const nestedTypes = type.types.map(t => serializeType(t, ctx))
-    return { kind: Types.TypeKind.Union, types: nestedTypes }
+    const normalizedTypes = Normalizers.normalizeUnion(nestedTypes)
+    return { kind: Types.TypeKind.Union, types: normalizedTypes }
   }
 
   function serializeEnum(type: ts.UnionType, ctx: Ctx): Types.Type {
@@ -185,6 +244,13 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return { kind: Types.TypeKind.Number }
     } else if (type.flags & ts.TypeFlags.Boolean) {
       return { kind: Types.TypeKind.Boolean }
+    } else if (type.flags & ts.TypeFlags.BooleanLiteral) {
+      switch ((type as any).intrinsicName) {
+        case 'true':
+          return { kind: Types.TypeKind.TrueLiteral }
+        case 'false':
+          return { kind: Types.TypeKind.FalseLiteral }
+      }
     } else if ((type.flags & ts.TypeFlags.Union) && (type.flags & ts.TypeFlags.EnumLiteral)) {
       return serializeEnum(<ts.UnionType>type, ctx)
     } else if (type.flags & ts.TypeFlags.ESSymbol) {
