@@ -121,7 +121,7 @@ export module Types {
 
 }
 
-export const REFLECTIVE_KEY = '___is_ts_runtime_reflective_decorator'
+export const REFLECTIVE_KEY = '__is_ts_runtime_reflective_decorator'
 
 type ReflectiveDecorator<T> = T
 export function ReflectiveFactory<T>(fn: T) {

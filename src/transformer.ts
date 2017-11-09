@@ -229,8 +229,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       }
       writeWarning(ctx.node, `unknown enum literal type: ${checker.typeToString(t)}`)
       return false
-    }).map( (t: ts.LiteralType) => {
-      return t.value
+    }).map((t: ts.Type) => {
+      return (t as ts.LiteralType).value
     })
     return { kind: Types.TypeKind.Enum, options }
   }
@@ -276,14 +276,14 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
   let currentScope: ts.SourceFile | ts.CaseBlock | ts.ModuleBlock | ts.Block;
   function addDecorator(oldDecorators: ts.NodeArray<ts.Decorator> | undefined, exp: any) {
-    let newDecorators = ts.createNodeArray<ts.Decorator>()
+    let newDecorators = []
     if (oldDecorators !== undefined) {
       newDecorators.push(...oldDecorators)
     }
     const decCall = ts.createCall(ts.createIdentifier('Reflect.metadata'), undefined, [ts.createLiteral(MetadataKey), exp])
     const dec = ts.createDecorator(decCall)
     newDecorators.push(dec)
-    return newDecorators
+    return ts.createNodeArray<ts.Decorator>(newDecorators)
   }
 
   function visitPropertyDeclaration(node: tse.PropertyDeclaration, allprops: string[]) {
@@ -316,9 +316,18 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     for (const dec of node.decorators) {
       if (dec.kind == ts.SyntaxKind.Decorator) {
+        
         const decType = checker.getTypeAtLocation(dec.expression)
-        if (decType.getProperty(REFLECTIVE_KEY) !== undefined) {
-          return true
+        let typesToCheck: ts.Type[]
+        if (decType.flags & ts.TypeFlags.UnionOrIntersection) {
+          typesToCheck = (decType as ts.UnionOrIntersectionType).types
+        } else {
+          typesToCheck = [decType]
+        }
+        for (const t of typesToCheck) {
+          if (t.getProperty(REFLECTIVE_KEY) !== undefined) {
+            return true
+          }
         }
 
       }
