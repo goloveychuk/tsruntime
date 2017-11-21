@@ -1,7 +1,7 @@
 # tsruntime
 
 [![Build Status](https://travis-ci.org/goloveychuk/tsruntime.svg?branch=master)](https://travis-ci.org/goloveychuk/tsruntime)
-
+[![npm version](https://badge.fury.io/js/tsruntime.svg)](https://www.npmjs.com/package/tsruntime)
 Library for emitting metadata for classes, using latest `customTransformers` api.
 
 ## Installation
