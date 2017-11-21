@@ -110,9 +110,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
 
     switch (type.kind) {
-      case Types.TypeKind.Enum:
-        assigns.push(ts.createPropertyAssignment("options", ts.createArrayLiteral(type.options.map(ts.createLiteral))))
-        break
       case Types.TypeKind.Interface:
         assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
@@ -122,6 +119,10 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         break
       case Types.TypeKind.Union:
         assigns.push(ts.createPropertyAssignment("types", ts.createArrayLiteral(type.types.map(makeLiteral))))
+        break
+      case Types.TypeKind.StringLiteral:
+      case Types.TypeKind.NumberLiteral:
+        assigns.push(ts.createPropertyAssignment('value', ts.createLiteral(type.value)))
         break
       case Types.TypeKind.Reference:
         assigns.push(ts.createPropertyAssignment("type", type.type))
@@ -222,22 +223,13 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return { kind: Types.TypeKind.Union, types: normalizedTypes }
   }
 
-  function serializeEnum(type: ts.UnionType, ctx: Ctx): Types.Type {
-    const options = type.types.filter(t => {
-      if (t.flags & (ts.TypeFlags.StringLiteral | ts.TypeFlags.NumberLiteral)) {
-        return true
-      }
-      writeWarning(ctx.node, `unknown enum literal type: ${checker.typeToString(t)}`)
-      return false
-    }).map((t: ts.Type) => {
-      return (t as ts.LiteralType).value
-    })
-    return { kind: Types.TypeKind.Enum, options }
-  }
-
   function serializeType(type: ts.Type, ctx: Ctx): Types.Type {
     if (type.flags & ts.TypeFlags.Any) {
       return { kind: Types.TypeKind.Any }
+    } else if (type.flags & ts.TypeFlags.StringLiteral) {
+      return {kind: Types.TypeKind.StringLiteral, value: (type as ts.StringLiteralType).value}
+    } else if (type.flags & ts.TypeFlags.NumberLiteral) {
+      return {kind: Types.TypeKind.NumberLiteral, value: (type as ts.NumberLiteralType).value}      
     } else if (type.flags & ts.TypeFlags.String) {
       return { kind: Types.TypeKind.String }
     } else if (type.flags & ts.TypeFlags.Number) {
@@ -251,8 +243,6 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         case 'false':
           return { kind: Types.TypeKind.FalseLiteral }
       }
-    } else if ((type.flags & ts.TypeFlags.Union) && (type.flags & ts.TypeFlags.EnumLiteral)) {
-      return serializeEnum(<ts.UnionType>type, ctx)
     } else if (type.flags & ts.TypeFlags.ESSymbol) {
       return { kind: Types.TypeKind.ESSymbol }
     } else if (type.flags & ts.TypeFlags.Void) {

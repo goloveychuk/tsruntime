@@ -7,7 +7,6 @@ export module Types {
     String,
     Number,
     Boolean,
-    Enum,
     StringLiteral,
     NumberLiteral,
     FalseLiteral,
@@ -33,7 +32,10 @@ export module Types {
 
 
 
-  export type Type = UnknownType | InterfaceType |  TupleType | AnyType | VoidType | NeverType | ESSymbolType |  EnumType  | ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType | UndefinedType | FalseLiteralType | TrueLiteralType
+  export type Type = UnknownType | InterfaceType | TupleType | AnyType | VoidType | NeverType | ESSymbolType | 
+    ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType |
+    UndefinedType | FalseLiteralType | TrueLiteralType | StringLiteralType | NumberLiteralType;
+
 
   export interface BaseType {
     kind: TypeKind
@@ -70,10 +72,6 @@ export module Types {
     kind: TypeKind.Undefined
   }
 
-  export interface EnumType extends BaseType {
-    kind: TypeKind.Enum
-    options: (string|number)[]
-  }
   export interface ESSymbolType extends BaseType {
     kind: TypeKind.ESSymbol
   }
@@ -92,6 +90,15 @@ export module Types {
   }
   export interface TrueLiteralType extends BaseType {
     kind: TypeKind.TrueLiteral
+  }
+
+  export interface StringLiteralType extends BaseType {
+    kind: TypeKind.StringLiteral
+    value: string
+  }
+  export interface NumberLiteralType extends BaseType {
+    kind: TypeKind.NumberLiteral
+    value: number
   }
 
   export interface ObjectType extends BaseType {
