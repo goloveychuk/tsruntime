@@ -124,7 +124,7 @@ export function mustGetType(target: Function): Types.Type {
 
 
 
-export function mustGetPropType(target: Function, propertyKey: string | symbol): Types.Type {
+export function mustGetPropType(target: Function, propertyKey: string | symbol | number): Types.Type {
   const type = getPropType(target, propertyKey)
   if (type === undefined) {
     throw new Error("can't find prop type")
