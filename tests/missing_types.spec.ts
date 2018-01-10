@@ -8,11 +8,12 @@ import {
    mustGetType,
    mustGetPropType,
    getType,
-   getPropType,
    Types
 } from '../src/types'
 
 import { ExternalClass } from './external_classes';
+import {getPropType} from './utils'
+
 
 class OuterClass {
 
@@ -64,7 +65,7 @@ class LocationClass {
 describe('Missing Support', () => {
    it('should support "type of" types', () => {
       // should allow supporting type of types
-      const type_prop_type = getPropType(TestClass, "type_prop") as Types.UnknownType;
+      const type_prop_type = getPropType(TestClass, "type_prop");
       expect(type_prop_type.kind).toBe(Types.TypeKind.Reference);
    });
 

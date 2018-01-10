@@ -1,5 +1,5 @@
-import { Reflective, getType, getPropType, Types } from '../../src/types'
-import {expectUnion} from '../utils'
+import { Reflective, getType, Types } from '../../src/types'
+import {expectUnion, getPropType} from '../utils'
 
 
 
@@ -37,11 +37,11 @@ describe('booleans', () => {
         expectUnion(type, {kind: Types.TypeKind.Null}, {kind: Types.TypeKind.Boolean})        
     })
     it('true false', () => {
-        const type = getPropType(BooleanTypes, "true_false") as Types.BooleanType
+        const type = getPropType(BooleanTypes, "true_false")
         expect(type.kind).toBe(Types.TypeKind.Boolean)
     })
     it('true false boolean', () => {
-        const type = getPropType(BooleanTypes, "true_false_boolean") as Types.BooleanType
+        const type = getPropType(BooleanTypes, "true_false_boolean")
         expect(type.kind).toBe(Types.TypeKind.Boolean)
     })
     it('true false boolean number', () => {
@@ -49,11 +49,11 @@ describe('booleans', () => {
         expectUnion(type, {kind: Types.TypeKind.Number}, {kind: Types.TypeKind.Boolean})        
     })
     it('false', () => {
-        const type = getPropType(BooleanTypes, "false") as Types.FalseLiteralType
+        const type = getPropType(BooleanTypes, "false")
         expect(type.kind).toBe(Types.TypeKind.FalseLiteral)
     })
     it('true', () => {
-        const type = getPropType(BooleanTypes, "true") as Types.TrueLiteralType
+        const type = getPropType(BooleanTypes, "true")
         expect(type.kind).toBe(Types.TypeKind.TrueLiteral)
     })
     it('false number', () => {

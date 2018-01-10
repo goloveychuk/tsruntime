@@ -3,6 +3,45 @@ import * as ts from 'typescript';
 import { Types, MetadataKey, REFLECTIVE_KEY } from './types';
 import * as tse from './typescript-extended'
 
+
+namespace InternalTypes {
+  export type Type = ClassType | InterfaceType | TupleType | ReferenceType | UnionType |
+  Types.StringLiteralType | Types.NumberLiteralType | Types.ObjectType |  Types.SimpleType 
+  
+
+  export interface InterfaceType extends Types.BaseType {
+    kind: Types.TypeKind.Interface
+    name: string
+    arguments: Type[]
+  }
+
+
+  export interface TupleType extends Types.BaseType {
+    kind: Types.TypeKind.Tuple
+    elementTypes: Type[]
+  }
+
+
+  export interface UnionType extends Types.BaseType {
+    kind: Types.TypeKind.Union
+    types: Type[]
+  }
+  export interface ReferenceType extends Types.BaseType {
+    kind: Types.TypeKind.Reference
+    type: ts.Identifier
+    arguments: Type[]
+  }
+
+  export interface ClassType extends Types.BaseType {
+    kind: Types.TypeKind.Class
+    name: string
+    props: ts.PropertyName[]
+    extends?: Type
+  }
+}
+
+
+
 type Ctx = {
   node: ts.Node
   // referencedSet: Set<string>
@@ -20,7 +59,7 @@ function writeWarning(node: ts.Node, msg: string) {
 }
 
 module Normalizers {
-  function normalizeBooleans(types: Types.Type[]): Types.Type[] {
+  function normalizeBooleans(types: InternalTypes.Type[]): InternalTypes.Type[] {
     let hasFalse = false;
     let hasTrue = false;
     let hasBoolean = false;
@@ -47,9 +86,9 @@ module Normalizers {
     return types
   }
 
-  export function normalizeUnion(types: Types.Type[]) {
-    const booleans: Types.Type[] = []
-    const okTypes: Types.Type[] = []
+  export function normalizeUnion(types: InternalTypes.Type[]) {
+    const booleans: InternalTypes.Type[] = []
+    const okTypes: InternalTypes.Type[] = []
 
     types.forEach(type => {
 
@@ -65,7 +104,7 @@ module Normalizers {
       }
     })
 
-    const normalizedTypes: Types.Type[] = []
+    const normalizedTypes: InternalTypes.Type[] = []
 
 
     if (booleans.length > 0) {
@@ -75,6 +114,17 @@ module Normalizers {
     return okTypes.concat(normalizedTypes)
   }
 
+}
+
+function getExpressionForPropertyName(name: ts.PropertyName): ts.Expression { //copied from typescript codebase (getExpressionForPropertyName)
+  if (ts.isComputedPropertyName(name)) {
+    throw new Error('is computed property')
+  }
+
+  if (ts.isIdentifier(name)) {
+    return ts.createLiteral(ts.idText(name))
+  }
+  return name
 }
 
 
@@ -99,7 +149,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
   // hack
   const checker = program.getTypeChecker()
-  function makeLiteral(type: Types.Type) {
+  function makeLiteral(type: InternalTypes.Type) {
     const assigns = []
     const kindAssign = ts.createPropertyAssignment("kind", ts.createLiteral(type.kind))
     const kindAssignComment = ts.addSyntheticTrailingComment(kindAssign, ts.SyntaxKind.MultiLineCommentTrivia, Types.TypeKind[type.kind], false)
@@ -130,7 +180,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
         break
       case Types.TypeKind.Class:
         assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
-        assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(ts.createLiteral))))
+        assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(getExpressionForPropertyName))))
         if (type.extends !== undefined) {
           assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
         }
@@ -163,7 +213,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
 
 
-  function serializeInterface(type: ts.InterfaceType, ctx: Ctx): Types.Type {
+  function serializeInterface(type: ts.InterfaceType, ctx: Ctx): InternalTypes.Type {
     const symbol = type.getSymbol()!
     if (symbol.valueDeclaration === undefined) {
       return { kind: Types.TypeKind.Interface, name: symbol.getName(), arguments: [] }
@@ -173,9 +223,9 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return { kind: Types.TypeKind.Reference, type: typeName, arguments: [] }
   }
 
-  function serializeReference(type: ts.TypeReference, ctx: Ctx): Types.Type {
+  function serializeReference(type: ts.TypeReference, ctx: Ctx): InternalTypes.Type {
     const typeArgs = type.typeArguments;
-    let allTypes: Types.Type[] = [];
+    let allTypes: InternalTypes.Type[] = [];
     if (typeArgs !== undefined) {
       allTypes = typeArgs.map(t => serializeType(t, ctx))
     }
@@ -192,10 +242,10 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
       return { kind: Types.TypeKind.Reference, arguments: allTypes, type: typeName }
     }
   }
-  function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers, allprops: string[], ctx: Ctx): Types.Type {
+  function serializeClass(type: ts.InterfaceTypeWithDeclaredMembers, allprops: ts.PropertyName[], ctx: Ctx): InternalTypes.Type {
 
     const base = type.getBaseTypes()!
-    let extendsCls: Types.Type | undefined;
+    let extendsCls: InternalTypes.Type | undefined;
     if (base.length > 0) {
       extendsCls = serializeType(base[0], ctx)
     }
@@ -203,7 +253,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return { kind: Types.TypeKind.Class, name: type.getSymbol()!.getName(), props: allprops, extends: extendsCls }
   }
 
-  function serializeObject(type: ts.ObjectType, ctx: Ctx): Types.Type {
+  function serializeObject(type: ts.ObjectType, ctx: Ctx): InternalTypes.Type {
     if (type.objectFlags & ts.ObjectFlags.Reference) {
       return serializeReference(<ts.TypeReference>type, ctx)
     } else if (type.objectFlags & ts.ObjectFlags.Interface) {
@@ -217,19 +267,19 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
 
 
-  function serializeUnion(type: ts.UnionType, ctx: Ctx): Types.Type {
+  function serializeUnion(type: ts.UnionType, ctx: Ctx): InternalTypes.Type {
     const nestedTypes = type.types.map(t => serializeType(t, ctx))
     const normalizedTypes = Normalizers.normalizeUnion(nestedTypes)
     return { kind: Types.TypeKind.Union, types: normalizedTypes }
   }
 
-  function serializeType(type: ts.Type, ctx: Ctx): Types.Type {
+  function serializeType(type: ts.Type, ctx: Ctx): InternalTypes.Type {
     if (type.flags & ts.TypeFlags.Any) {
       return { kind: Types.TypeKind.Any }
     } else if (type.flags & ts.TypeFlags.StringLiteral) {
-      return {kind: Types.TypeKind.StringLiteral, value: (type as ts.StringLiteralType).value}
+      return { kind: Types.TypeKind.StringLiteral, value: (type as ts.StringLiteralType).value }
     } else if (type.flags & ts.TypeFlags.NumberLiteral) {
-      return {kind: Types.TypeKind.NumberLiteral, value: (type as ts.NumberLiteralType).value}      
+      return { kind: Types.TypeKind.NumberLiteral, value: (type as ts.NumberLiteralType).value }
     } else if (type.flags & ts.TypeFlags.String) {
       return { kind: Types.TypeKind.String }
     } else if (type.flags & ts.TypeFlags.Number) {
@@ -276,8 +326,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return ts.createNodeArray<ts.Decorator>(newDecorators)
   }
 
-  function visitPropertyDeclaration(node: tse.PropertyDeclaration, allprops: string[]) {
-    allprops.push(node.name.getText())
+  function visitPropertyDeclaration(node: tse.PropertyDeclaration, allprops: ts.PropertyName[]) {
+    allprops.push(node.name)
     const type = checker.getTypeAtLocation(node)
     let serializedType = serializeType(type, { node })
     let initializerExp;
@@ -291,7 +341,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     newNode.decorators = newDecorators
     return newNode
   }
-  function visitClassMember(node: ts.Node, allprops: string[]) {
+  function visitClassMember(node: ts.Node, allprops: ts.PropertyName[]) {
     switch (node.kind) {
       case ts.SyntaxKind.PropertyDeclaration:
         return visitPropertyDeclaration(<tse.PropertyDeclaration>node, allprops)
@@ -306,7 +356,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     }
     for (const dec of node.decorators) {
       if (dec.kind == ts.SyntaxKind.Decorator) {
-        
+
         const decType = checker.getTypeAtLocation(dec.expression)
         let typesToCheck: ts.Type[]
         if (decType.flags & ts.TypeFlags.UnionOrIntersection) {
@@ -331,7 +381,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (!shouldReflect(node)) {
       return node
     }
-    const allprops = new Array<string>()
+    const allprops = new Array<ts.PropertyName>()
 
     const newMembers = ts.visitNodes(node.members, nod => visitClassMember(nod, allprops));
 

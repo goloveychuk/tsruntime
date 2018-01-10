@@ -32,10 +32,14 @@ export module Types {
 
 
 
-  export type Type = UnknownType | InterfaceType | TupleType | AnyType | VoidType | NeverType | ESSymbolType | 
-    ObjectType | ClassType | StringType | NumberType | BooleanType | ReferenceType | UnionType | NullType |
-    UndefinedType | FalseLiteralType | TrueLiteralType | StringLiteralType | NumberLiteralType;
+  export type Type = InterfaceType | TupleType |
+    ObjectType | ClassType | ReferenceType | UnionType |
+    StringLiteralType | NumberLiteralType | SimpleType;
 
+  export interface SimpleType extends BaseType {
+    kind: TypeKind.String | TypeKind.Number | TypeKind.Boolean | TypeKind.Null | TypeKind.Undefined | TypeKind.ESSymbol |
+    TypeKind.Void | TypeKind.Never | TypeKind.Any | TypeKind.FalseLiteral | TypeKind.TrueLiteral | Types.TypeKind.Unknown
+  }
 
   export interface BaseType {
     kind: TypeKind
@@ -49,48 +53,12 @@ export module Types {
     arguments: Type[]
   }
 
-  export interface StringType extends BaseType {
-    kind: TypeKind.String
-  }
 
-  export interface NumberType extends BaseType {
-    kind: TypeKind.Number
-  }
   export interface TupleType extends BaseType {
     kind: TypeKind.Tuple
     elementTypes: Type[]
   }
-  export interface BooleanType extends BaseType {
-    kind: TypeKind.Boolean
-  }
 
-  export interface NullType extends BaseType {
-    kind: TypeKind.Null
-  }
-
-  export interface UndefinedType extends BaseType {
-    kind: TypeKind.Undefined
-  }
-
-  export interface ESSymbolType extends BaseType {
-    kind: TypeKind.ESSymbol
-  }
-  export interface VoidType extends BaseType {
-    kind: TypeKind.Void
-  }
-  export interface NeverType extends BaseType {
-    kind: TypeKind.Never
-  }
-  export interface AnyType extends BaseType {
-    kind: TypeKind.Any
-  }
-
-  export interface FalseLiteralType extends BaseType {
-    kind: TypeKind.FalseLiteral
-  }
-  export interface TrueLiteralType extends BaseType {
-    kind: TypeKind.TrueLiteral
-  }
 
   export interface StringLiteralType extends BaseType {
     kind: TypeKind.StringLiteral
@@ -118,25 +86,22 @@ export module Types {
   export interface ClassType extends BaseType {
     kind: TypeKind.Class
     name: string
-    props: string[]
+    props: (string | number)[]
     extends?: Types.Type
   }
 
-  export interface UnknownType extends BaseType {
-    kind: TypeKind.Unknown
-  }
-
 }
+
 
 export const REFLECTIVE_KEY = '__is_ts_runtime_reflective_decorator'
 
 type ReflectiveDecorator<T> = T
 export function ReflectiveFactory<T>(fn: T) {
-  return fn as T & {__is_ts_runtime_reflective_decorator: boolean}
+  return fn as T & { __is_ts_runtime_reflective_decorator: boolean }
 }
 
 
-export const Reflective = ReflectiveFactory(function(target: any) {
+export const Reflective = ReflectiveFactory(function (target: any) {
 
 })
 
@@ -169,6 +134,6 @@ export function mustGetPropType(target: Function, propertyKey: string | symbol):
 
 
 
-export function getPropType(target: Function, propertyKey: string | symbol):  Types.Type | undefined {
+export function getPropType(target: Function, propertyKey: string | symbol): Types.Type | undefined {
   return Reflect.getMetadata(MetadataKey, target.prototype, propertyKey)
 }

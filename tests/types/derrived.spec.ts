@@ -1,5 +1,5 @@
-import { Reflective, getType, getPropType, Types } from '../../src/types'
-import {expectUnion} from '../utils'
+import { Reflective, getType, Types } from '../../src/types'
+import {expectUnion, getPropType} from '../utils'
 
 
 class GenericCls<T> {
@@ -36,27 +36,27 @@ class DerrivedTypes {
 
 describe('derrived types', () => {
     it('string', () => {
-        const type = getPropType(DerrivedTypes, "string") as Types.StringType;
+        const type = getPropType(DerrivedTypes, "string")
         expect(type.kind).toBe(Types.TypeKind.String)
     })
     it('number', () => {
-        const type = getPropType(DerrivedTypes, "number") as Types.NumberType;
+        const type = getPropType(DerrivedTypes, "number")
         expect(type.kind).toBe(Types.TypeKind.Number)
     })
     it('true', () => {
-        const type = getPropType(DerrivedTypes, "true") as Types.BooleanType;
+        const type = getPropType(DerrivedTypes, "true")
         expect(type.kind).toBe(Types.TypeKind.Boolean)
     })
     it('false', () => {
-        const type = getPropType(DerrivedTypes, "false") as Types.BooleanType;
+        const type = getPropType(DerrivedTypes, "false")
         expect(type.kind).toBe(Types.TypeKind.Boolean)
     })
     it('null', () => {
-        const type = getPropType(DerrivedTypes, "null") as Types.NullType;
+        const type = getPropType(DerrivedTypes, "null")
         expect(type.kind).toBe(Types.TypeKind.Null)
     })
     it('undefined', () => {
-        const type = getPropType(DerrivedTypes, "undefined") as Types.UndefinedType;
+        const type = getPropType(DerrivedTypes, "undefined")
         expect(type.kind).toBe(Types.TypeKind.Undefined)
     })
     
