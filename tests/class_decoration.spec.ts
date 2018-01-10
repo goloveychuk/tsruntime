@@ -33,6 +33,9 @@ describe('Class Decoration', () => {
       expect(ptype.extends).toEqual({kind: TypeKind.Reference, type: Array, arguments: [{kind: TypeKind.String} as any]})
       
       expect(ptype.props).toEqual(['str', 'str-str', 42])
+
+      expect(getPropType(TestClass, 42)).toEqual({kind: TypeKind.String})
+      
    });
 
 });

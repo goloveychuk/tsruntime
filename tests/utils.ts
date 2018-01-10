@@ -9,7 +9,7 @@ export function expectUnion(union: Types.UnionType, ...types: Types.Type[])  {
 
 
 
-export function getPropType(target: Function, propertyKey: string | symbol): Types.Type {
+export function getPropType(target: Function, propertyKey: string | symbol | number): Types.Type {
     const t = baseGetPropType(target, propertyKey)
     expect(t).toBeDefined()
     return t!
