@@ -1,2 +1,3 @@
 
-export * from './types';
+export * from './publicTypes';
+export * from './utils'
