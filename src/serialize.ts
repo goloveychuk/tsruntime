@@ -86,7 +86,7 @@ function serializeReference(type: ts.TypeReference, ctx: Ctx): ReflectedType {
 function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
   let name: string;
   
-  const typenode = ctx.checker.typeToTypeNode(type, ctx.node);
+  const typenode = ctx.checker.typeToTypeNode(type, ctx.node)!; //todo not sure
 
   switch (typenode.kind) {
     case ts.SyntaxKind.TypeReference:
@@ -96,7 +96,7 @@ function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
       if (origSymb.getFlags() & ts.SymbolFlags.Alias) {
         origSymb = ctx.checker.getAliasedSymbol(origSymb);
       }
-      ReferencedSet.add(getSymbolId(origSymb));
+      ctx.markReferenced(origSymb)
       break;
     default:
       name = type.getSymbol()!.getName();

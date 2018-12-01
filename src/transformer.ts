@@ -15,7 +15,8 @@ function getSymbolId(symb: ts.Symbol): number {
 
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
   let ReferencedSet = new Set<number>()
-
+      
+  const markReferenced = (symb: ts.Symbol) => ReferencedSet.add(getSymbolId(symb)); 
   ////hack (99
   const emitResolver = (<tse.TransformationContext>context).getEmitResolver()
   const oldIsReferenced = emitResolver.isReferencedAliasDeclaration
@@ -52,7 +53,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   function visitPropertyDeclaration(node: tse.PropertyDeclaration, allprops: ts.PropertyName[]) {
     allprops.push(node.name)
     const type = checker.getTypeAtLocation(node)
-    const ctx = new Ctx(checker, node, currentScope)
+    const ctx = new Ctx(checker, node, currentScope, markReferenced)
     let serializedType = serializeType(type, ctx)
     let initializerExp;
     if (node.initializer !== undefined) {
@@ -110,7 +111,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const newMembers = ts.visitNodes(node.members, nod => visitClassMember(nod, allprops));
 
     const type = checker.getTypeAtLocation(node)
-    const ctx = new Ctx(checker, node, currentScope)
+    const ctx = new Ctx(checker, node, currentScope, markReferenced)
 
     let serializedType = serializeClass(<ts.InterfaceTypeWithDeclaredMembers>type, allprops, ctx)
 
