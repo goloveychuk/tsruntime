@@ -27,7 +27,8 @@
             "name": "ttsc",
             "program": "${workspaceRoot}/node_modules/.bin/ttsc",
             "args": [
-                
+                // "--no-emit",
+                "${file}",
             ],
             "cwd": "${workspaceFolder}/packages/tests",
             "outFiles": [

@@ -6,6 +6,7 @@
     ]
   },
   "scripts": {
+      "build": "cd packages/tsruntime  && npm run build",
       "watch": "cd packages/tsruntime  && npm run watch",
       "test": "cd packages/tests  && npm run test"
   },
