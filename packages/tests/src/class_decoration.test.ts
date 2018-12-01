@@ -5,7 +5,6 @@ import {
    getPropType
 } from 'tsruntime';
 
-const TypeKind = Types.TypeKind;
 
 
 @Reflective
