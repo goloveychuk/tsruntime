@@ -4,24 +4,35 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            // "program": "${workspaceRoot}/tests/build/tests/start.js",
             "program": "${workspaceRoot}/node_modules/.bin/jest",
             "args": [
                 "--no-cache",
-                "boolean"
+                "--runInBand",
+                // "boolean"
             ],
-
-            // "preLaunchTask": "compile",
-            // "args": [
-            //     "${workspaceRoot}/tests/temp.spec.ts"
-            // ],
-            // "outFiles": [
-            //     "${workspaceRoot}/tests/build/**/*"
-            // ],
+            "cwd": "${workspaceFolder}/packages/tests",
+            "outFiles": [
+                
+            ],
+            "sourceMaps": true
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ttsc",
+            "program": "${workspaceRoot}/node_modules/.bin/ttsc",
+            "args": [
+                
+            ],
+            "cwd": "${workspaceFolder}/packages/tests",
+            "outFiles": [
+                "${workspaceRoot}/tsruntime/dist/**/*"
+            ],
             "sourceMaps": true
         }
       

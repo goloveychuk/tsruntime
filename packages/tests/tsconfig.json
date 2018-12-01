@@ -2,7 +2,10 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        
+        "outDir": "dist",
+        "plugins": [
+            { "transform": "../tsruntime/dist/transformer.js", "type": "program" },
+        ],
     },
     "include": [
         "src/**/*"

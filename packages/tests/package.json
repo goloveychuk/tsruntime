@@ -4,9 +4,8 @@
     "main": "./dist/index.js",
     "typings": "./dist/index.d.ts",
     "scripts": {
-        "test": "jest",
-        "watch:test": "npm run test -- --watch",
-        "build:test": "rimraf ./tests/build && rimraf ./tests/emit_output && tsc -p ./tests"
+        "test": "npm run build && jest --no-cache",
+        "build": "rimraf ./dist && ttsc"
     },
     "repository": {
       "type": "git",
