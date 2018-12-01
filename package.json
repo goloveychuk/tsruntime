@@ -1,34 +1,17 @@
 {
-  "name": "tsruntime",
-  "version": "2.1.2",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "build": "rimraf dist && tsc --pretty",
-    "test": "jest",
-    "watch": "rimraf dist && tsc --watch --pretty",
-    "watch:test": "npm run test -- --watch",
-    "build:test": "rimraf ./tests/build && rimraf ./tests/emit_output && tsc -p ./tests"
+      "watch": "cd packages/tsruntime  && npm run watch"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/goloveychuk/tsruntime.git"
-  },
-  "keywords": [
-    "typescript",
-    "reflect",
-    "runtime"
-  ],
-  "bugs": {
-    "url": "https://github.com/goloveychuk/tsruntime/issues"
-  },
-  "homepage": "https://github.com/goloveychuk/tsruntime",
-  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^23.3.9",
-    "awesome-typescript-loader": "git://github.com/goloveychuk/awesome-typescript-loader#dist",
     "jest": "^23.6.0",
+    "lerna": "^3.5.1",
     "reflect-metadata": "^0.1.10",
     "rimraf": "^2.6.1",
     "ts-jest": "^23.10.4",

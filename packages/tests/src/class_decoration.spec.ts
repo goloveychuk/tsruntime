@@ -3,7 +3,7 @@ import {
    Types,
    getType,
    getPropType
-} from '../src';
+} from 'tsruntime';
 
 const TypeKind = Types.TypeKind;
 
@@ -28,13 +28,13 @@ describe('Class Decoration', () => {
 
    it('should decorate null properties', () => {
       const ptype = getType(TestClass) as Types.ClassType
-      expect(ptype.kind).toEqual(TypeKind.Class)
+      expect(ptype.kind).toEqual(Types.TypeKind.Class)
       expect(ptype.name).toEqual('TestClass')
-      expect(ptype.extends).toEqual({kind: TypeKind.Reference, type: Array, arguments: [{kind: TypeKind.String} as any]})
+      expect(ptype.extends).toEqual({kind: Types.TypeKind.Reference, type: Array, arguments: [{kind: Types.TypeKind.String} as any]})
       
       expect(ptype.props).toEqual(['str', 'str-str', 42])
 
-      expect(getPropType(TestClass, 42)).toEqual({kind: TypeKind.String})
+      expect(getPropType(TestClass, 42)).toEqual({kind: Types.TypeKind.String})
       
    });
 

@@ -1,17 +1,17 @@
 
-import { Reflective, getType, Types } from '../../src/types'
+import { Reflective, getType, Types } from 'tsruntime'
 import {getPropType} from '../utils'
 
 @Reflective
 class PrimitiveTypes {
-    string: string
-    number: number
-    any: any
-    undefined: undefined
-    null: null
-    void: void
-    never: never
-    symbol: symbol
+    string!: string
+    number!: number
+    any!: any
+    undefined!: undefined
+    null!: null
+    void!: void
+    never!: never
+    symbol!: symbol
 }
 
 

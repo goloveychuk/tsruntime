@@ -1,10 +1,10 @@
 import {
     getType,
     mustGetType,
-} from '../src';
+} from 'tsruntime';
 import {
     Reflective
-} from '../src';
+} from 'tsruntime';
 
 import { ExportedCls as Ecls } from './module' //todo aliasing
 

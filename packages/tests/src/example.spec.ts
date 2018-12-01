@@ -3,7 +3,7 @@ import {
    Types,
    getType,
    getPropType
-} from '../src';
+} from 'tsruntime';
 
 const TypeKind = Types.TypeKind;
 
@@ -14,9 +14,9 @@ const TypeKind = Types.TypeKind;
 @Reflective
 export class StatsModel {
     a?: number
-    b: string
-    c: Array<string>
-    d: number | string | null
+    b!: string
+    c!: Array<string>
+    d!: number | string | null
 }
 
 @Reflective
@@ -31,7 +31,7 @@ describe('Example works', () => {
       expect(clsType).not.toBeNull();
 
       expect(clsType.props).toEqual([]);
-      expect(baseType!.kind).toEqual(TypeKind.Reference);
+      expect(baseType!.kind).toEqual(Types.TypeKind.Reference);
    });
 
    it('should have property type details', () => {
@@ -40,7 +40,7 @@ describe('Example works', () => {
 
       const dType = getPropType(StatsModel, "d")
       expect(dType).not.toBeNull();
-      expect((dType as Types.Type).kind).toEqual(TypeKind.Union);
+      expect(dType!.kind).toEqual(Types.TypeKind.Union);
    });
 
 });

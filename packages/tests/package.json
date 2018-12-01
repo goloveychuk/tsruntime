@@ -1,0 +1,29 @@
+{
+    "name": "tsruntime-tests",
+    "version": "2.1.2",
+    "main": "./dist/index.js",
+    "typings": "./dist/index.d.ts",
+    "scripts": {
+        "test": "jest",
+        "watch:test": "npm run test -- --watch",
+        "build:test": "rimraf ./tests/build && rimraf ./tests/emit_output && tsc -p ./tests"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/goloveychuk/tsruntime.git"
+    },
+    "keywords": [
+      "typescript",
+      "reflect",
+      "runtime"
+    ],
+    "bugs": {
+      "url": "https://github.com/goloveychuk/tsruntime/issues"
+    },
+    "homepage": "https://github.com/goloveychuk/tsruntime",
+    "license": "MIT",
+    "dependencies": {
+        "tsruntime": "*"
+    }
+  }
+  

@@ -1,4 +1,4 @@
-import { Reflective, getType, getPropType, Types } from '../../src/types'
+import { Reflective, getType, getPropType, Types } from 'tsruntime'
 
 
 class GenericCls<T> {
@@ -11,12 +11,12 @@ class Cls {
 
 @Reflective
 class ReferenceTypes {
-    refArray: Array<string>
-    refString: String
-    refNumber: Number
-    refDate: Date
-    clsRef: Cls
-    genRef: GenericCls<string>
+    refArray!: Array<string>
+    refString!: String
+    refNumber!: Number
+    refDate!: Date
+    clsRef!: Cls
+    genRef!: GenericCls<string>
 }
 
 

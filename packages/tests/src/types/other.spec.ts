@@ -1,11 +1,11 @@
 
-import { Reflective, getType, getPropType, Types } from '../../src/types'
+import { Reflective, getType, getPropType, Types } from 'tsruntime'
 import {expectUnion} from '../utils'
 
 @Reflective
 class OtherTypes {
-    array: string[]
-    tuple: [string, number]
+    array!: string[]
+    tuple!: [string, number]
     optional?: number     
 }
 

@@ -1,0 +1,25 @@
+{
+  "name": "tsruntime",
+  "version": "2.1.2",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "rimraf dist && tsc --pretty",
+    "watch": "rimraf dist && tsc --watch --pretty"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goloveychuk/tsruntime.git"
+  },
+  "keywords": [
+    "typescript",
+    "reflect",
+    "runtime"
+  ],
+  "bugs": {
+    "url": "https://github.com/goloveychuk/tsruntime/issues"
+  },
+  "homepage": "https://github.com/goloveychuk/tsruntime",
+  "license": "MIT"
+}

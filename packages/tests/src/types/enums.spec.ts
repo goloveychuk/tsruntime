@@ -1,4 +1,4 @@
-import { Reflective, getType, getPropType, Types } from '../../src/types'
+import { Reflective, getType, getPropType, Types } from 'tsruntime'
 import { expectUnion } from '../utils'
 
 enum NumberEnum {
@@ -23,10 +23,10 @@ enum DefaultEnum {
 
 @Reflective
 class SimpleEnums {
-    numberEnum: NumberEnum
-    stringEnum: StringEnum
-    mixedEnum: MixedEnum
-    defaultEnum: DefaultEnum
+    numberEnum!: NumberEnum
+    stringEnum!: StringEnum
+    mixedEnum!: MixedEnum
+    defaultEnum!: DefaultEnum
 }
 
 
@@ -71,12 +71,12 @@ describe('simple enums', () => {
 
 @Reflective
 class ComplexEnums {
-    enumBoolean: StringEnum | boolean
-    enumFalse: StringEnum | false
-    enumNull: StringEnum | null
-    enumUndefined: StringEnum | undefined
+    enumBoolean!: StringEnum | boolean
+    enumFalse!: StringEnum | false
+    enumNull!: StringEnum | null
+    enumUndefined!: StringEnum | undefined
     optionalEnum?: StringEnum
-    enumsUnion: StringEnum | NumberEnum
+    enumsUnion!: StringEnum | NumberEnum
 }
 
 

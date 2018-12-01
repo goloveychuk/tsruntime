@@ -1,5 +1,5 @@
 
-import { Reflective, getType, getPropType, Types } from '../../src/types'
+import { Reflective, getType, getPropType, Types } from 'tsruntime'
 
 
 

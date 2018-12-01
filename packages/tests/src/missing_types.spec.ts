@@ -9,7 +9,7 @@ import {
    mustGetPropType,
    getType,
    Types
-} from '../src/types'
+} from 'tsruntime'
 
 import { ExternalClass } from './external_classes';
 import {getPropType} from './utils'
@@ -80,7 +80,7 @@ describe('Missing Support', () => {
    it('should work nested', () => {
       @Reflective
       class InnerClass {
-          a: string;
+          a!: string;
       }
 
       const clsType = getType(InnerClass);
