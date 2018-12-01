@@ -14,7 +14,10 @@
         "noFallthroughCasesInSwitch": true,
         "removeComments": true,
         "strict": true,
-        "lib": ["dom", "es2015"]
+        "lib": ["dom", "es2015"],
+        // "plugins": [
+        //     { "transform": "./dist/transformer.js", "type": "program" },
+        // ],
     },
     "include": [
         "src/**/*"

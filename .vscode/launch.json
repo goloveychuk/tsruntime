@@ -8,14 +8,20 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}/tests/build/tests/start.js",
-            "preLaunchTask": "compile",
+            // "program": "${workspaceRoot}/tests/build/tests/start.js",
+            "program": "${workspaceRoot}/node_modules/.bin/jest",
             "args": [
-                "${workspaceRoot}/tests/temp.spec.ts"
+                "--no-cache",
+                "boolean"
             ],
-            "outFiles": [
-                "${workspaceRoot}/tests/build/**/*"
-            ],
+
+            // "preLaunchTask": "compile",
+            // "args": [
+            //     "${workspaceRoot}/tests/temp.spec.ts"
+            // ],
+            // "outFiles": [
+            //     "${workspaceRoot}/tests/build/**/*"
+            // ],
             "sourceMaps": true
         }
       

@@ -4,6 +4,6 @@
       "*.ts", "*.d.ts"
    ],
    "compilerOptions": {
-       "outDir": "./build"
+      "outDir": "dist"
    }
 }
