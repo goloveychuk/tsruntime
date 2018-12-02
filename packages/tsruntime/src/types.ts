@@ -45,6 +45,7 @@ export interface InterfaceType extends Types.BaseType {
   kind: TypeKind.Interface;
   name: string;
   arguments: ReflectedType[];
+  properties: Array<{name: ts.PropertyName, type: ReflectedType}>
 }
 
 export interface TupleType extends Types.BaseType {

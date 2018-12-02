@@ -1,6 +1,12 @@
 import * as ts from "typescript";
 import { ReflectedType, TypeKind, Ctx } from "./types";
 
+function arrToObj<V>(arr: Array<[string, V]>) {
+  const res: {[key: string]: V} = {}
+  arr.forEach(([k, v])=> res[k]=v)
+  return res
+}
+
 namespace Normalizers {
   function normalizeBooleans(types: ReflectedType[]): ReflectedType[] {
     let hasFalse = false;
@@ -75,7 +81,8 @@ function serializeReference(type: ts.TypeReference, ctx: Ctx): ReflectedType {
     return {
       kind: TypeKind.Interface,
       name: symbol.getName(),
-      arguments: allTypes
+      arguments: allTypes,
+      properties: []
     };
   } else {
     const typeName = getIdentifierForSymbol(target, ctx);
@@ -109,10 +116,39 @@ function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
   return typeIdentifier;
 }
 
-function serializeInterface(type: ts.InterfaceType, ctx: Ctx): ReflectedType {
+function getPropertName(symbol: ts.Symbol) {
+  const {valueDeclaration} = symbol
+  if (valueDeclaration) {
+    if (!ts.isPropertySignature(valueDeclaration)) {
+      throw new Error('not prop signature')
+    }
+    return valueDeclaration.name
+  }
+  //@ts-ignore
+  const nameType = symbol.nameType as ts.Type
+
+  const nameSymb = nameType.getSymbol()
+  if (nameSymb) {
+    //@ts-ignore
+    return nameSymb.valueDeclaration as any
+  } else {
+    //@ts-ignore
+    return ts.createLiteral(nameType.value)
+  }
+}
+function serializeObjectType(type: ts.ObjectType, ctx: Ctx): ReflectedType {
   const symbol = type.getSymbol()!;
   if (symbol.valueDeclaration === undefined) {
-    return { kind: TypeKind.Interface, name: symbol.getName(), arguments: [] };
+    let properties = ctx.checker.getPropertiesOfType(type)
+      .map(sym => {
+        const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node)
+        const serializedType = serializeType(type, ctx)
+
+        const name = getPropertName(sym)
+        return {name: name, type: serializedType}
+      })
+
+    return { kind: TypeKind.Interface, name: symbol.getName(), arguments: [], properties };
   }
 
   const typeName = getIdentifierForSymbol(type, ctx);
@@ -122,17 +158,18 @@ function serializeInterface(type: ts.InterfaceType, ctx: Ctx): ReflectedType {
 function serializeObject(type: ts.ObjectType, ctx: Ctx): ReflectedType {
   if (type.objectFlags & ts.ObjectFlags.Reference) {
     return serializeReference(<ts.TypeReference>type, ctx);
-  } else if (type.objectFlags & ts.ObjectFlags.Interface) {
-    return serializeInterface(<ts.InterfaceType>type, ctx);
-  } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
-    return {
-      kind: TypeKind.Reference,
-      type: ts.createIdentifier("Object"),
-      arguments: []
-    };
-  }
-  ctx.reportUnknownType(type);
-  return { kind: TypeKind.Unknown2 };
+  } 
+  // else if (type.objectFlags & ts.ObjectFlags.Interface) {
+  return serializeObjectType(type, ctx);
+  // } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
+  //   return {
+  //     kind: TypeKind.Reference,
+  //     type: ts.createIdentifier("Object"),
+  //     arguments: []
+  //   };
+  // }
+  // ctx.reportUnknownType(type);
+  // return { kind: TypeKind.Unknown2 };
 }
 
 export function serializeType(type: ts.Type, ctx: Ctx): ReflectedType {

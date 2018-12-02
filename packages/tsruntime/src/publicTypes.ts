@@ -63,6 +63,7 @@ export interface InterfaceType extends BaseType {
   kind: TypeKind.Interface;
   name: string;
   arguments: ReflectedType[];
+  properties: {[key: string]: ReflectedType}
 }
 
 export interface TupleType extends BaseType {

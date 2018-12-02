@@ -3,10 +3,10 @@ import * as ts from 'typescript';
 import {ReflectedType, TypeKind} from './types'
 
 
-function getExpressionForPropertyName(name: ts.PropertyName): ts.Expression { //copied from typescript codebase (getExpressionForPropertyName)
-    if (ts.isComputedPropertyName(name)) {
-      throw new Error('is computed property')
-    }
+function getExpressionForPropertyName(name: ts.PropertyName) { //copied from typescript codebase (getExpressionForPropertyName)
+    // if (ts.isComputedPropertyName(name)) {
+    //   throw new Error('is computed property')
+    // }
   
     if (ts.isIdentifier(name)) {
       return ts.createLiteral(ts.idText(name))
@@ -28,6 +28,10 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
       case TypeKind.Interface:
         assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
+        assigns.push(ts.createPropertyAssignment("properties", ts.createObjectLiteral(
+          type.properties.map(({name, type}) =>
+            ts.createPropertyAssignment(getExpressionForPropertyName(name), makeLiteral(type))
+        ))))
         break
       case TypeKind.Tuple:
         assigns.push(ts.createPropertyAssignment("elementTypes", ts.createArrayLiteral(type.elementTypes.map(makeLiteral))))
@@ -45,7 +49,7 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
         break
       case TypeKind.Class:
         assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
-        assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(getExpressionForPropertyName))))
+        // assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(getExpressionForPropertyName))))
         if (type.extends !== undefined) {
           assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
         }
