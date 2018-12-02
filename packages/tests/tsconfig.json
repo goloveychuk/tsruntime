@@ -3,6 +3,8 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
         "outDir": "dist",
+        "sourceMap": false,
+        "declaration": false,
         "plugins": [
             { "transform": "../tsruntime/dist/transformer.js", "type": "program" },
         ],

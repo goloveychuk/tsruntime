@@ -10,7 +10,7 @@ const stringType = {kind: Types.TypeKind.String}
 
 type ObjectType = {
     key: string
-    42: number
+    42: string
     [uniqSymb]: string
 }
 
@@ -20,7 +20,12 @@ describe("object types", () => {
     const type = reflect<ObjectType>()
 
     expect(type).toEqual({
-        
+        kind: Types.TypeKind.Object,
+        properties: {
+            'key': stringType,
+            42: stringType,
+            [uniqSymb]: stringType
+        }
     })
   })
 });

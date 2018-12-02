@@ -25,9 +25,11 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
     }
 
     switch (type.kind) {
-      case TypeKind.Interface:
-        assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
-        assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
+      case TypeKind.Object:
+        if (type.name) {
+          assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
+        }
+        // assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         assigns.push(ts.createPropertyAssignment("properties", ts.createObjectLiteral(
           type.properties.map(({name, type}) =>
             ts.createPropertyAssignment(getExpressionForPropertyName(name), makeLiteral(type))

@@ -19,7 +19,6 @@ export enum TypeKind {
   Tuple,
   Union,
   Reference,
-  Interface,
   Class,
   Unknown,
 
@@ -27,9 +26,8 @@ export enum TypeKind {
 }
 
 export type ReflectedType =
-  | InterfaceType
-  | TupleType
   | ObjectType
+  | TupleType
   | ClassType
   | ReferenceType
   | UnionType
@@ -59,10 +57,10 @@ export interface BaseType {
   initializer?: any; //todo
 }
 
-export interface InterfaceType extends BaseType {
-  kind: TypeKind.Interface;
+export interface ObjectType extends BaseType {
+  kind: TypeKind.Object;
   name: string;
-  arguments: ReflectedType[];
+  // arguments: ReflectedType[];
   properties: {[key: string]: ReflectedType}
 }
 
@@ -80,9 +78,6 @@ export interface NumberLiteralType extends BaseType {
   value: number;
 }
 
-export interface ObjectType extends BaseType {
-  kind: TypeKind.Object;
-}
 
 export interface UnionType extends BaseType {
   kind: TypeKind.Union;

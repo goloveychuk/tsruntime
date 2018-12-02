@@ -32,8 +32,7 @@ describe("interfaces", () => {
     const type = reflect<AllKeys>()
     expect(type).toEqual({
         name: 'AllKeys',
-        kind: Types.TypeKind.Interface,
-        arguments: [],
+        kind: Types.TypeKind.Object,
         properties: {
             "s": stringType,
             "string-key": stringType,
@@ -49,8 +48,7 @@ describe("interfaces", () => {
     const type = reflect<IExtends>()
     expect(type).toEqual({
         name: 'IExtends',
-        kind: Types.TypeKind.Interface,
-        arguments: [],
+        kind: Types.TypeKind.Object,
         properties: {
             "origKey": stringType,
             "myKey": stringType,

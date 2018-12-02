@@ -30,21 +30,20 @@ export class Ctx {
 
 export type ReflectedType =
   | ClassType
-  | InterfaceType
+  | ObjectType
   | TupleType
   | ReferenceType
   | UnionType
   | Types.StringLiteralType
   | Types.NumberLiteralType
-  | Types.ObjectType
   | Types.SimpleType;
 
 type Override<T, O> = Pick<T, Exclude<keyof T, keyof O>> & O
 
-export interface InterfaceType extends Types.BaseType {
-  kind: TypeKind.Interface;
-  name: string;
-  arguments: ReflectedType[];
+export interface ObjectType extends Types.BaseType {
+  kind: TypeKind.Object;
+  name?: string;
+  // arguments: ReflectedType[];
   properties: Array<{name: ts.PropertyName, type: ReflectedType}>
 }
 
