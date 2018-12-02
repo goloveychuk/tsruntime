@@ -35,6 +35,21 @@
                 "${workspaceRoot}/tsruntime/dist/**/*"
             ],
             "sourceMaps": true
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ttsc asd",
+            "program": "${workspaceRoot}/node_modules/.bin/ttsc",
+            "args": [
+                // "--no-emit",
+                "${workspaceRoot}/packages/tests/src/asd.ts",
+            ],
+            "cwd": "${workspaceFolder}/packages/tests",
+            "outFiles": [
+                "${workspaceRoot}/tsruntime/dist/**/*"
+            ],
+            "sourceMaps": true
         }
       
     ]

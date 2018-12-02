@@ -1,4 +1,4 @@
-import { Reflective, getType, getPropType, Types } from 'tsruntime'
+import { Reflective, reflect, getPropType, Types } from 'tsruntime'
 import { expectUnion } from '../utils'
 
 enum NumberEnum {
@@ -21,15 +21,6 @@ enum DefaultEnum {
 }
 
 
-@Reflective
-class SimpleEnums {
-    numberEnum!: NumberEnum
-    stringEnum!: StringEnum
-    mixedEnum!: MixedEnum
-    defaultEnum!: DefaultEnum
-}
-
-
 
 
 
@@ -37,29 +28,29 @@ class SimpleEnums {
 
 describe('simple enums', () => {
     it('number enum', () => {
-        const type = getPropType(SimpleEnums, "numberEnum") as Types.UnionType;
+        const type = reflect<NumberEnum>()
         expectUnion(type,
             { kind: Types.TypeKind.NumberLiteral, value: 1 },
             { kind: Types.TypeKind.NumberLiteral, value: 2 }
         )
     })
     it('string enum', () => {
-        const stringEnum = getPropType(SimpleEnums, "stringEnum") as Types.UnionType;
-        expectUnion(stringEnum,
+        const type = reflect<StringEnum>()
+        expectUnion(type,
             { kind: Types.TypeKind.StringLiteral, value: 'a' },
             { kind: Types.TypeKind.StringLiteral, value: 'b' }
         )
     })
     it('mixed enum', () => {
-        const mixedEnum = getPropType(SimpleEnums, "mixedEnum") as Types.UnionType;
-        expectUnion(mixedEnum,
+        const type = reflect<MixedEnum>()
+        expectUnion(type,
             { kind: Types.TypeKind.StringLiteral, value: 'a' },
             { kind: Types.TypeKind.NumberLiteral, value: 2 }
         )
     })
     it('default enum', () => {
-        const defaultEnum = getPropType(SimpleEnums, "defaultEnum") as Types.UnionType;
-        expectUnion(defaultEnum,
+        const type = reflect<DefaultEnum>()
+        expectUnion(type,
             { kind: Types.TypeKind.NumberLiteral, value: 0 },
             { kind: Types.TypeKind.NumberLiteral, value: 1 },
             { kind: Types.TypeKind.NumberLiteral, value: 2 }
@@ -71,18 +62,13 @@ describe('simple enums', () => {
 
 @Reflective
 class ComplexEnums {
-    enumBoolean!: StringEnum | boolean
-    enumFalse!: StringEnum | false
-    enumNull!: StringEnum | null
     enumUndefined!: StringEnum | undefined
-    optionalEnum?: StringEnum
-    enumsUnion!: StringEnum | NumberEnum
 }
 
 
 describe('complex enums', () => {
     it('enum boolean', () => {
-        const type = getPropType(ComplexEnums, "enumBoolean") as Types.UnionType;
+        const type = reflect<StringEnum | boolean>()
         expectUnion(type,
             { kind: Types.TypeKind.StringLiteral, value: 'a' },
             { kind: Types.TypeKind.StringLiteral, value: 'b' },
@@ -90,7 +76,7 @@ describe('complex enums', () => {
         )
     })
     it('enum false', () => {
-        const type = getPropType(ComplexEnums, "enumFalse") as Types.UnionType;
+        const type = reflect<StringEnum | false>()
         expectUnion(type,
             { kind: Types.TypeKind.StringLiteral, value: 'a' },
             { kind: Types.TypeKind.StringLiteral, value: 'b' },
@@ -98,7 +84,7 @@ describe('complex enums', () => {
         )
     })
     it('enum null', () => {
-        const type = getPropType(ComplexEnums, "enumNull") as Types.UnionType;
+        const type = reflect<StringEnum | null>()
         expectUnion(type,
             { kind: Types.TypeKind.Null},
             { kind: Types.TypeKind.StringLiteral, value: 'a' },
@@ -106,7 +92,7 @@ describe('complex enums', () => {
         )
     })
     it('enum undefined', () => {
-        const type = getPropType(ComplexEnums, "enumUndefined") as Types.UnionType;
+        const type = reflect<StringEnum | undefined>()
         expectUnion(type,
             { kind: Types.TypeKind.Undefined},
             { kind: Types.TypeKind.StringLiteral, value: 'a' },
@@ -122,7 +108,7 @@ describe('complex enums', () => {
         )
     })
     it('enums union', () => {
-        const type = getPropType(ComplexEnums, "enumsUnion") as Types.UnionType;
+        const type = reflect<StringEnum | NumberEnum>()
         expectUnion(type,
             { kind: Types.TypeKind.NumberLiteral, value: 1 },
             { kind: Types.TypeKind.NumberLiteral, value: 2 },

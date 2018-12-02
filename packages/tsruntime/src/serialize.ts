@@ -96,7 +96,9 @@ function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
       if (origSymb.getFlags() & ts.SymbolFlags.Alias) {
         origSymb = ctx.checker.getAliasedSymbol(origSymb);
       }
-      ctx.markReferenced(origSymb)
+      if (ctx.markReferenced) {
+        ctx.markReferenced(origSymb)
+      }
       break;
     default:
       name = type.getSymbol()!.getName();
@@ -130,7 +132,7 @@ function serializeObject(type: ts.ObjectType, ctx: Ctx): ReflectedType {
     };
   }
   ctx.reportUnknownType(type);
-  return { kind: TypeKind.Unknown };
+  return { kind: TypeKind.Unknown2 };
 }
 
 export function serializeType(type: ts.Type, ctx: Ctx): ReflectedType {
@@ -169,13 +171,15 @@ export function serializeType(type: ts.Type, ctx: Ctx): ReflectedType {
     return { kind: TypeKind.Null };
   } else if (type.flags & ts.TypeFlags.Never) {
     return { kind: TypeKind.Never };
+  } else if (type.flags & ts.TypeFlags.Unknown) {
+    return { kind: TypeKind.Unknown };
   } else if (type.flags & ts.TypeFlags.Object) {
     return serializeObject(<ts.ObjectType>type, ctx);
   } else if (type.flags & ts.TypeFlags.Union) {
     return serializeUnion(<ts.UnionType>type, ctx);
   }
   ctx.reportUnknownType(type)
-  return { kind: TypeKind.Unknown };
+  return { kind: TypeKind.Unknown2 };
 }
 
 export function serializeClass(

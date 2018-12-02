@@ -8,7 +8,7 @@ export {TypeKind}
 export type ScopeType = ts.SourceFile | ts.CaseBlock | ts.ModuleBlock | ts.Block;
 
 export class Ctx {
-  constructor(readonly checker: ts.TypeChecker, readonly node: ts.Node, readonly currentScope: ScopeType, readonly markReferenced: (symb: ts.Symbol)=>void) {}
+  constructor(readonly checker: ts.TypeChecker, readonly node: ts.Node, readonly currentScope: ScopeType, readonly markReferenced?: (symb: ts.Symbol)=>void) {}
 
   reportUnknownType = (type: ts.Type) => {
     const { checker} = this;

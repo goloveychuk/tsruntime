@@ -21,8 +21,9 @@ export enum TypeKind {
   Reference,
   Interface,
   Class,
+  Unknown,
 
-  Unknown = 999
+  Unknown2=999
 }
 
 export type ReflectedType =
@@ -49,7 +50,8 @@ export interface SimpleType extends BaseType {
     | TypeKind.Any
     | TypeKind.FalseLiteral
     | TypeKind.TrueLiteral
-    | TypeKind.Unknown;
+    | TypeKind.Unknown
+    | TypeKind.Unknown2;
 }
 
 export interface BaseType {
