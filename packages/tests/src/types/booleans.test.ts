@@ -4,23 +4,10 @@ import {expectUnion, getPropType} from '../utils'
 
 
 
-
-@Reflective
-class BooleanTypes {
-    optional_boolean?: boolean
-}
-
-
-
-
 describe('booleans', () => {
     it('boolean undefined', () => {
         const type = reflect<boolean | undefined>()
         expectUnion(type, {kind: Types.TypeKind.Undefined}, {kind: Types.TypeKind.Boolean})
-    })
-    it('boolean optional', () => {
-        const type = getPropType(BooleanTypes, "optional_boolean")
-        expectUnion(type, {kind: Types.TypeKind.Undefined}, {kind: Types.TypeKind.Boolean})        
     })
     it('boolean null', () => {
         const type = reflect<boolean | null>()

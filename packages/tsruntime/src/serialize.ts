@@ -116,7 +116,7 @@ function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
   return typeIdentifier;
 }
 
-function getPropertName(symbol: ts.Symbol): ts.PropertyName {
+function getPropertyName(symbol: ts.Symbol): ts.PropertyName {
   const { valueDeclaration } = symbol;
   if (valueDeclaration) {
     if (!ts.isPropertySignature(valueDeclaration)) {
@@ -129,7 +129,6 @@ function getPropertName(symbol: ts.Symbol): ts.PropertyName {
 
   const nameSymb = nameType.getSymbol();
   if (nameSymb) {
-    //@ts-ignore
     return nameSymb.valueDeclaration as any;
   } else {
     //@ts-ignore
@@ -146,7 +145,7 @@ function serializeObjectType(type: ts.ObjectType, ctx: Ctx): ReflectedType {
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = serializeType(type, ctx);
 
-    const name = getPropertName(sym);
+    const name = getPropertyName(sym);
     return { name: name, type: serializedType };
   });
   let name

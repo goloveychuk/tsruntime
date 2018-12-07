@@ -34,7 +34,7 @@ class DerrivedTypes {
 }
 
 
-describe('derrived types', () => {
+describe.skip('class defaults types', () => {
     it('string', () => {
         const type = getPropType(DerrivedTypes, "string")
         expect(type.kind).toBe(Types.TypeKind.String)

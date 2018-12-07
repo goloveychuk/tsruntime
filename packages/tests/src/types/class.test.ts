@@ -23,7 +23,7 @@ class TestClass extends Array<string> {
     }
 }
 
-describe('Class Decoration', () => {
+describe.skip('Class Decoration', () => {
 
    it('should decorate null properties', () => {
       const ptype = getType(TestClass) as Types.ClassType

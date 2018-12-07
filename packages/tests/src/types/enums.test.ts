@@ -60,10 +60,6 @@ describe('simple enums', () => {
 
 
 
-@Reflective
-class ComplexEnums {
-    enumUndefined!: StringEnum | undefined
-}
 
 
 describe('complex enums', () => {
@@ -93,14 +89,6 @@ describe('complex enums', () => {
     })
     it('enum undefined', () => {
         const type = reflect<StringEnum | undefined>()
-        expectUnion(type,
-            { kind: Types.TypeKind.Undefined},
-            { kind: Types.TypeKind.StringLiteral, value: 'a' },
-            { kind: Types.TypeKind.StringLiteral, value: 'b' },
-        )
-    })
-    it('optional enum', () => {
-        const type = getPropType(ComplexEnums, "optionalEnum") as Types.UnionType;
         expectUnion(type,
             { kind: Types.TypeKind.Undefined},
             { kind: Types.TypeKind.StringLiteral, value: 'a' },

@@ -1,16 +1,8 @@
 
-import { Reflective, getType, getPropType, Types } from 'tsruntime'
+import { Reflective, getType, getPropType, Types, reflect } from 'tsruntime'
+import { expectUnion } from '../utils'
 
 
-
-
-
-
-@Reflective
-class UnionTypes {
-    string_null: string | null = '';
-    string_undefined: string | undefined;
-}
 
 
 
@@ -23,15 +15,13 @@ class UnionTypes {
 
 describe('union types', () => {
     it('string | null', () => {
-        const type = getPropType(UnionTypes, "string_null") as Types.UnionType;
-        expect(type.types[1].kind).toBe(Types.TypeKind.String);
-        expect(type.types[0].kind).toBe(Types.TypeKind.Null);
+        const type = reflect<string | null>()
+        expectUnion(type, {kind: Types.TypeKind.Null}, { kind: Types.TypeKind.String});
     });
 
     it('string | undefined', () => {
-        const type = getPropType(UnionTypes, "string_undefined") as Types.UnionType;
-        expect(type.types[1].kind).toBe(Types.TypeKind.String);
-        expect(type.types[0].kind).toBe(Types.TypeKind.Undefined);
+        const type = reflect<string | undefined>()
+        expectUnion(type, {kind: Types.TypeKind.Undefined}, {kind: Types.TypeKind.String});
     });
 
 })
