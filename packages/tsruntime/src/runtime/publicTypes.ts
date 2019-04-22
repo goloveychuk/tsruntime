@@ -22,8 +22,40 @@ export enum TypeKind {
   Class,
   Unknown,
 
-  Unknown2=999
+  Unknown2 = 999
 }
+
+
+export type StringType = BaseType<TypeKind.String, string>;
+export type NumberType = BaseType<TypeKind.Number, number>;
+export type BooleanType = BaseType<TypeKind.Boolean, boolean>;
+export type NullType = BaseType<TypeKind.Null, null>;
+export type UndefinedType = BaseType<TypeKind.Undefined, undefined>;
+export type ESSymbolType = BaseType<TypeKind.ESSymbol, Symbol>;
+export type VoidType = BaseType<TypeKind.Void, void>;
+export type NeverType = BaseType<TypeKind.Never, never>;
+export type AnyType = BaseType<TypeKind.Any, any>;
+export type FalseLiteralType = BaseType<TypeKind.FalseLiteral, false>;
+export type TrueLiteralType = BaseType<TypeKind.TrueLiteral, true>;
+export type UnknownType = BaseType<TypeKind.Unknown, unknown>;
+export type Unknown2Type = BaseType<TypeKind.Unknown2, unknown>;
+
+export type SimpleTypes =
+  | StringType
+  | NumberType
+  | BooleanType
+  | NullType
+  | UndefinedType
+  | ESSymbolType
+  | VoidType
+  | NeverType
+  | AnyType
+  | FalseLiteralType
+  | TrueLiteralType
+  | UnknownType
+  | Unknown2Type;
+
+  
 
 export type ReflectedType =
   | ObjectType
@@ -33,64 +65,41 @@ export type ReflectedType =
   | UnionType
   | StringLiteralType
   | NumberLiteralType
-  | SimpleType;
+  | SimpleTypes;
 
-export interface SimpleType extends BaseType {
-  kind:
-    | TypeKind.String
-    | TypeKind.Number
-    | TypeKind.Boolean
-    | TypeKind.Null
-    | TypeKind.Undefined
-    | TypeKind.ESSymbol
-    | TypeKind.Void
-    | TypeKind.Never
-    | TypeKind.Any
-    | TypeKind.FalseLiteral
-    | TypeKind.TrueLiteral
-    | TypeKind.Unknown
-    | TypeKind.Unknown2;
+export interface BaseType<TKind extends TypeKind, T> {
+  kind: TKind;
+  initializer?: () => T;
 }
 
-export interface BaseType {
-  kind: TypeKind;
-  initializer?: any; //todo
+export interface ObjectType extends BaseType<TypeKind.Object, unknown> {
+  name?: string;
+  properties: { [key: string]: ReflectedType };
 }
 
-export interface ObjectType extends BaseType {
-  kind: TypeKind.Object;
-  name: string;
-  // arguments: ReflectedType[];
-  properties: {[key: string]: ReflectedType}
-}
-
-export interface TupleType extends BaseType {
-  kind: TypeKind.Tuple;
+export interface TupleType extends BaseType<TypeKind.Tuple, unknown[]> {
   elementTypes: ReflectedType[];
 }
 
-export interface StringLiteralType extends BaseType {
-  kind: TypeKind.StringLiteral;
+export interface StringLiteralType
+  extends BaseType<TypeKind.StringLiteral, string> {
   value: string;
 }
-export interface NumberLiteralType extends BaseType {
-  kind: TypeKind.NumberLiteral;
+export interface NumberLiteralType
+  extends BaseType<TypeKind.NumberLiteral, number> {
   value: number;
 }
 
-
-export interface UnionType extends BaseType {
-  kind: TypeKind.Union;
+export interface UnionType extends BaseType<TypeKind.Union, unknown> {
   types: ReflectedType[];
 }
-export interface ReferenceType extends BaseType {
-  kind: TypeKind.Reference;
+export interface ReferenceType extends BaseType<TypeKind.Reference, any> {
   type: any;
   arguments: ReflectedType[];
 }
 
-export interface ClassType extends BaseType {
-  kind: TypeKind.Class;
+export interface ClassType extends BaseType<TypeKind.Class, never> {
+  //TODO think about references vs class
   name: string;
   props: (string | number)[];
   extends?: ReflectedType;

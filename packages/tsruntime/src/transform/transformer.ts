@@ -78,6 +78,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (!shouldReflectClass(checker, node)) {
       return node
     }
+
+    
   }
   
   function onBeforeVisitNode(node: ts.Node) {

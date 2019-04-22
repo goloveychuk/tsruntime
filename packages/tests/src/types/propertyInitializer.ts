@@ -1,5 +1,5 @@
-import { Reflective, getType, Types } from 'tsruntime'
-import {expectUnion, getPropType} from '../utils'
+import { Reflective, Types } from 'tsruntime'
+import {expectUnion} from '../utils'
 
 
 class GenericCls<T> {
@@ -33,6 +33,7 @@ class DerrivedTypes {
     enum = SomeEnum.a
 }
 
+let getPropType!: any
 
 describe.skip('class defaults types', () => {
     it('string', () => {
@@ -65,7 +66,7 @@ describe.skip('class defaults types', () => {
         expect(type.kind).toBe(Types.TypeKind.Reference)
         expect(type.type).toBe(Array)
         expect(type.initializer).not.toBe(undefined)
-        expect(type.initializer()).toEqual(['string'])
+        expect(type.initializer!()).toEqual(['string'])
         expect(type.arguments).toEqual([{kind: Types.TypeKind.String}])
     })
     it('ref array', () => {
@@ -73,7 +74,7 @@ describe.skip('class defaults types', () => {
         expect(type.kind).toBe(Types.TypeKind.Reference)
         expect(type.type).toBe(Array)
         expect(type.initializer).not.toBe(undefined)
-        expect(type.initializer()).toEqual([])
+        expect(type.initializer!()).toEqual([])
         expect(type.arguments).toEqual([{kind: Types.TypeKind.String}])
     })
     it('ref', () => {

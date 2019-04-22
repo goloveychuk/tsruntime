@@ -1,5 +1,5 @@
 
-import { Types, getPropType as baseGetPropType } from 'tsruntime'
+import { Types } from 'tsruntime'
 
 
 export function expectUnion(union: Types.ReflectedType, ...types: Types.ReflectedType[])  {
@@ -8,10 +8,3 @@ export function expectUnion(union: Types.ReflectedType, ...types: Types.Reflecte
     expect(union.types).toEqual(types)
 }
 
-
-
-export function getPropType(target: Function, propertyKey: string | symbol | number): Types.ReflectedType {
-    const t = baseGetPropType(target, propertyKey)
-    expect(t).toBeDefined()
-    return t!
-  }

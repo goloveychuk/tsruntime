@@ -1,4 +1,4 @@
-import { Reflective, reflect, getPropType, Types } from 'tsruntime'
+import { reflect, Types } from 'tsruntime'
 import { expectUnion } from '../utils'
 
 enum NumberEnum {

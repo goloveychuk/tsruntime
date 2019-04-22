@@ -1,4 +1,4 @@
-import { Reflective, getType, getPropType, Types, reflect } from 'tsruntime'
+import { Types, reflect } from 'tsruntime'
 
 
 class GenericCls<T> {

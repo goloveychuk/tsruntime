@@ -1,6 +1,5 @@
 
-import { Reflective, getType, Types, reflect } from 'tsruntime'
-import {getPropType} from '../utils'
+import { Types, reflect } from 'tsruntime'
 
 
 
