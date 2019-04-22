@@ -1,8 +1,8 @@
 {
   "name": "tsruntime",
   "version": "2.1.2",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "main": "./dist/runtime/index.js",
+  "typings": "./dist/runtime/index.d.ts",
   "scripts": {
     "prepublishOnly": "npm run build",
     "build": "rimraf dist && tsc --pretty",

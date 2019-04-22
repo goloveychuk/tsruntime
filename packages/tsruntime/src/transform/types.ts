@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 
-import * as Types from "./publicTypes";
-import {TypeKind} from "./publicTypes";
+import * as Types from "../runtime/publicTypes";
+import {TypeKind} from "../runtime/publicTypes";
 
 export {TypeKind}
 

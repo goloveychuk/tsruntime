@@ -6,7 +6,7 @@
         "sourceMap": false,
         "declaration": false,
         "plugins": [
-            { "transform": "../tsruntime/dist/transformer.js", "type": "program" },
+            { "transform": "../tsruntime/dist/transform/transformer.js", "type": "program" },
         ],
     },
     "include": [

@@ -1,7 +1,7 @@
 
 import * as ts from 'typescript';
 import * as tse from './typescript-extended'
-import { MetadataKey, REFLECTIVE_KEY } from './utils';
+import { MetadataKey, REFLECTIVE_KEY } from '../runtime/classUtils';
 import {makeLiteral} from './makeLiteral'
 import {reflectType, serializeClass} from './reflect'
 import { Ctx, ScopeType } from './types';
