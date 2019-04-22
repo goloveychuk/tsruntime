@@ -3,7 +3,7 @@ import * as ts from 'typescript';
 import * as tse from './typescript-extended'
 import { MetadataKey, REFLECTIVE_KEY } from './utils';
 import {makeLiteral} from './makeLiteral'
-import {serializeType, serializeClass} from './serialize'
+import {reflectType, serializeClass} from './reflect'
 import { Ctx, ScopeType } from './types';
 
 function getSymbolId(symb: ts.Symbol): number {
@@ -54,7 +54,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     allprops.push(node.name)
     const type = checker.getTypeAtLocation(node)
     const ctx = new Ctx(checker, node, currentScope, markReferenced)
-    let serializedType = serializeType(type, ctx)
+    let serializedType = reflectType(type, ctx)
     let initializerExp;
     if (node.initializer !== undefined) {
       initializerExp = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, node.initializer)
