@@ -13,6 +13,7 @@ interface AllKeys {
   [constKey]: string;
   ["computed-string"]: string;
   [uniqSymb]: string;
+  method(): string
 }
 
 interface IExtended {
@@ -40,7 +41,8 @@ describe("interfaces", () => {
             [43]: stringType,
             [constKey]: stringType,
             ['computed-string']: stringType,
-            [uniqSymb]: stringType
+            [uniqSymb]: stringType,
+            method: {kind: Types.TypeKind.Function}
         }
     });
   });

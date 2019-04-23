@@ -47,6 +47,7 @@ export type ReflectedType =
   | TupleType
   | ReferenceType
   | UnionType
+  | Override2<Types.FunctionType>
   | Override2<Types.StringLiteralType>
   | Override2<Types.NumberLiteralType>
   | Override2<Types.SimpleTypes>
@@ -57,10 +58,12 @@ type Override2<T> = Override<T, {}>
 
 // type Override2<T, O> = T extends {[key: string]: infer R} ? {[key: string]: R extends Types.ReflectedType ? ReflectedType : R}: T
 
+
+type Properties = Array<{ name: ts.PropertyName; type: ReflectedType }>;
 export type ObjectType = Override<
   Types.ObjectType,
   {
-    properties: Array<{ name: ts.PropertyName; type: ReflectedType }>;
+    properties: Properties
   }
 >;
 
@@ -88,7 +91,7 @@ export type ReferenceType = Override<
 export type ClassType = Override<
   Types.ClassType,
   {
-    props: ts.PropertyName[];
+    properties: Properties
     extends?: ReflectedType;
   }
 >;

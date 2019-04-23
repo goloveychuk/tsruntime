@@ -22,6 +22,8 @@ export enum TypeKind {
   Class,
   Unknown,
 
+  Function,
+
   Unknown2 = 999
 }
 
@@ -64,6 +66,7 @@ export type ReflectedType =
   | ReferenceType
   | UnionType
   | StringLiteralType
+  | FunctionType
   | NumberLiteralType
   | SimpleTypes;
 
@@ -75,6 +78,10 @@ export interface BaseType<TKind extends TypeKind, T> {
 export interface ObjectType extends BaseType<TypeKind.Object, unknown> {
   name?: string;
   properties: { [key: string]: ReflectedType };
+}
+
+export interface FunctionType extends BaseType<TypeKind.Function, Function> {
+
 }
 
 export interface TupleType extends BaseType<TypeKind.Tuple, unknown[]> {
@@ -101,6 +108,6 @@ export interface ReferenceType extends BaseType<TypeKind.Reference, any> {
 export interface ClassType extends BaseType<TypeKind.Class, never> {
   //TODO think about references vs class
   name: string;
-  props: (string | number)[];
+  properties: { [key: string]: ReflectedType };
   extends?: ReflectedType;
 }

@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tse from "./typescript-extended";
 import { MetadataKey, REFLECTIVE_KEY } from "../runtime/classUtils";
 import { makeLiteral } from "./makeLiteral";
-import { reflectType } from "./reflect";
+import { getReflect } from "./reflect";
 import { Ctx, ScopeType } from "./types";
 
 function getSymbolId(symb: ts.Symbol): number {
@@ -67,7 +67,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
     const argType = checker.getTypeAtLocation(node.typeArguments![0]);
 
-    const reflectedType = reflectType(argType, ctx);
+    const reflectedType = getReflect(ctx).reflectType(argType);
     const literal = makeLiteral(reflectedType);
 
     return literal;
@@ -78,8 +78,17 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     if (!shouldReflectClass(checker, node)) {
       return node
     }
+    const type = checker.getTypeAtLocation(node);
 
+    const ctx = new Ctx(checker, node, currentScope);
+
+
+    const reflectedType = getReflect(ctx).reflectClass(type as any) //todo
+    const literal = makeLiteral(reflectedType);
     
+    return literal
+    // return node
+
   }
   
   function onBeforeVisitNode(node: ts.Node) {

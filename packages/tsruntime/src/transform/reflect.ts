@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { ReflectedType, TypeKind, Ctx } from "./types";
+import { ReflectedType, TypeKind, Ctx, ObjectType, ClassType } from "./types";
 
 function arrToObj<V>(arr: Array<[string, V]>) {
   const res: { [key: string]: V } = {};
@@ -60,182 +60,203 @@ namespace Normalizers {
   }
 }
 
-function serializeUnion(type: ts.UnionType, ctx: Ctx): ReflectedType {
-  const nestedTypes = type.types.map(t => reflectType(t, ctx));
-  const normalizedTypes = Normalizers.normalizeUnion(nestedTypes);
-  return { kind: TypeKind.Union, types: normalizedTypes };
-}
-
-function serializeReference(type: ts.TypeReference, ctx: Ctx): ReflectedType {
-  const typeArgs = type.typeArguments;
-  let allTypes: ReflectedType[] = [];
-  if (typeArgs !== undefined) {
-    allTypes = typeArgs.map(t => reflectType(t, ctx));
+export function getReflect(ctx: Ctx) {
+  function serializeUnion(type: ts.UnionType): ReflectedType {
+    const nestedTypes = type.types.map(t => reflectType(t));
+    const normalizedTypes = Normalizers.normalizeUnion(nestedTypes);
+    return { kind: TypeKind.Union, types: normalizedTypes };
   }
-  const target = type.target;
-  if (target.objectFlags & ts.ObjectFlags.Tuple) {
-    return { kind: TypeKind.Tuple, elementTypes: allTypes };
-  }
-  const symbol = target.getSymbol()!;
-  if (symbol.valueDeclaration === undefined) {
-    return {
-      kind: TypeKind.Object,
-      name: symbol.getName(),
-      // arguments: allTypes,
-      properties: []
-    };
-  } else {
-    const typeName = getIdentifierForSymbol(target, ctx);
-    return { kind: TypeKind.Reference, arguments: allTypes, type: typeName };
-  }
-}
 
-function getIdentifierForSymbol(type: ts.Type, ctx: Ctx): ts.Identifier {
-  let name: string;
-
-  const typenode = ctx.checker.typeToTypeNode(type, ctx.node)!; //todo not sure
-
-  switch (typenode.kind) {
-    case ts.SyntaxKind.TypeReference:
-      const typename = (<ts.TypeReferenceNode>typenode).typeName;
-      name = (<ts.Identifier>typename).text;
-      let origSymb = type.getSymbol()!;
-      if (origSymb.getFlags() & ts.SymbolFlags.Alias) {
-        origSymb = ctx.checker.getAliasedSymbol(origSymb);
-      }
-      if (ctx.markReferenced) {
-        ctx.markReferenced(origSymb);
-      }
-      break;
-    default:
-      name = type.getSymbol()!.getName();
-  }
-  const typeIdentifier = ts.createIdentifier(name);
-  typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
-  typeIdentifier.parent = ctx.currentScope;
-  return typeIdentifier;
-}
-
-function getPropertyName(symbol: ts.Symbol): ts.PropertyName {
-  const { valueDeclaration } = symbol;
-  if (valueDeclaration) {
-    if (!ts.isPropertySignature(valueDeclaration)) {
-      throw new Error("not prop signature");
+  function serializeReference(type: ts.TypeReference): ReflectedType {
+    const typeArgs = type.typeArguments;
+    let allTypes: ReflectedType[] = [];
+    if (typeArgs !== undefined) {
+      allTypes = typeArgs.map(t => reflectType(t));
     }
-    return valueDeclaration.name;
+    const target = type.target;
+    if (target.objectFlags & ts.ObjectFlags.Tuple) {
+      return { kind: TypeKind.Tuple, elementTypes: allTypes };
+    }
+    const symbol = target.getSymbol()!;
+    if (symbol.valueDeclaration === undefined) {
+      return {
+        kind: TypeKind.Object,
+        name: symbol.getName(),
+        // arguments: allTypes,
+        properties: []
+      };
+    } else {
+      const typeName = getIdentifierForSymbol(target);
+      return { kind: TypeKind.Reference, arguments: allTypes, type: typeName };
+    }
   }
-  //@ts-ignore
-  const nameType = symbol.nameType as ts.Type;
 
-  const nameSymb = nameType.getSymbol();
-  if (nameSymb) {
-    return nameSymb.valueDeclaration as any;
-  } else {
+  function getIdentifierForSymbol(type: ts.Type): ts.Identifier {
+    let name: string;
+
+    const typenode = ctx.checker.typeToTypeNode(type, ctx.node)!; //todo not sure
+
+    switch (typenode.kind) {
+      case ts.SyntaxKind.TypeReference:
+        const typename = (<ts.TypeReferenceNode>typenode).typeName;
+        name = (<ts.Identifier>typename).text;
+        let origSymb = type.getSymbol()!;
+        if (origSymb.getFlags() & ts.SymbolFlags.Alias) {
+          origSymb = ctx.checker.getAliasedSymbol(origSymb);
+        }
+        if (ctx.markReferenced) {
+          ctx.markReferenced(origSymb);
+        }
+        break;
+      default:
+        name = type.getSymbol()!.getName();
+    }
+    const typeIdentifier = ts.createIdentifier(name);
+    typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
+    typeIdentifier.parent = ctx.currentScope;
+    return typeIdentifier;
+  }
+
+  function getPropertyName(symbol: ts.Symbol): ts.PropertyName {
+    const { valueDeclaration } = symbol;
+    if (valueDeclaration) {
+      // if (!ts.isPropertySignature(valueDeclaration) && !ts.isPropertyDeclaration(valueDeclaration)) {
+      // throw new Error("not prop signature");
+      // }
+      return (valueDeclaration as ts.PropertyLikeDeclaration).name;
+    }
     //@ts-ignore
-    return ts.createLiteral(nameType.value);
+    const nameType = symbol.nameType as ts.Type;
+
+    const nameSymb = nameType.getSymbol();
+    if (nameSymb) {
+      return nameSymb.valueDeclaration as any;
+    } else {
+      //@ts-ignore
+      return ts.createLiteral(nameType.value);
+    }
   }
-}
-function serializeObjectType(type: ts.ObjectType, ctx: Ctx): ReflectedType {
-  const symbol = type.getSymbol()!;
-  if (symbol.valueDeclaration !== undefined) {
-    const typeName = getIdentifierForSymbol(type, ctx);
-    return { kind: TypeKind.Reference, type: typeName, arguments: [] };
-  }
-  let properties = ctx.checker.getPropertiesOfType(type).map(sym => {
+
+  function serializePropertySymbol(sym: ts.Symbol) {
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
-    const serializedType = reflectType(type, ctx);
+    const serializedType = reflectType(type);
 
     const name = getPropertyName(sym);
     return { name: name, type: serializedType };
-  });
-  let name
-  if (type.objectFlags & ts.ObjectFlags.Anonymous) {
-    name = undefined
-  } else {
-    name = symbol.getName()
   }
-  return { kind: TypeKind.Object, name: name, properties };
-}
 
-function serializeObject(type: ts.ObjectType, ctx: Ctx): ReflectedType {
-  if (type.objectFlags & ts.ObjectFlags.Reference) {
-    return serializeReference(<ts.TypeReference>type, ctx);
-  }
-  // else if (type.objectFlags & ts.ObjectFlags.Interface) {
-  return serializeObjectType(type, ctx);
-  // } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
-  //   return {
-  //     kind: TypeKind.Reference,
-  //     type: ts.createIdentifier("Object"),
-  //     arguments: []
-  //   };
-  // }
-  // ctx.reportUnknownType(type);
-  // return { kind: TypeKind.Unknown2 };
-}
+  function serializeObjectType(type: ts.ObjectType): ReflectedType {
+    const symbol = type.getSymbol()!;
 
-export function reflectType(type: ts.Type, ctx: Ctx): ReflectedType {
-  if (type.flags & ts.TypeFlags.Any) {
-    return { kind: TypeKind.Any };
-  } else if (type.flags & ts.TypeFlags.StringLiteral) {
-    return {
-      kind: TypeKind.StringLiteral,
-      value: (type as ts.StringLiteralType).value
-    };
-  } else if (type.flags & ts.TypeFlags.NumberLiteral) {
-    return {
-      kind: TypeKind.NumberLiteral,
-      value: (type as ts.NumberLiteralType).value
-    };
-  } else if (type.flags & ts.TypeFlags.String) {
-    return { kind: TypeKind.String };
-  } else if (type.flags & ts.TypeFlags.Number) {
-    return { kind: TypeKind.Number };
-  } else if (type.flags & ts.TypeFlags.Boolean) {
-    return { kind: TypeKind.Boolean };
-  } else if (type.flags & ts.TypeFlags.BooleanLiteral) {
-    switch ((type as any).intrinsicName) {
-      case "true":
-        return { kind: TypeKind.TrueLiteral };
-      case "false":
-        return { kind: TypeKind.FalseLiteral };
+    let properties = ctx.checker
+      .getPropertiesOfType(type)
+      .map(serializePropertySymbol);
+      
+    let name;
+    if (type.objectFlags & ts.ObjectFlags.Anonymous) {
+      name = undefined;
+    } else {
+      name = symbol.getName();
     }
-  } else if (type.flags & ts.TypeFlags.ESSymbol) {
-    return { kind: TypeKind.ESSymbol };
-  } else if (type.flags & ts.TypeFlags.Void) {
-    return { kind: TypeKind.Void };
-  } else if (type.flags & ts.TypeFlags.Undefined) {
-    return { kind: TypeKind.Undefined };
-  } else if (type.flags & ts.TypeFlags.Null) {
-    return { kind: TypeKind.Null };
-  } else if (type.flags & ts.TypeFlags.Never) {
-    return { kind: TypeKind.Never };
-  } else if (type.flags & ts.TypeFlags.Unknown) {
-    return { kind: TypeKind.Unknown };
-  } else if (type.flags & ts.TypeFlags.Object) {
-    return serializeObject(<ts.ObjectType>type, ctx);
-  } else if (type.flags & ts.TypeFlags.Union) {
-    return serializeUnion(<ts.UnionType>type, ctx);
-  }
-  ctx.reportUnknownType(type);
-  return { kind: TypeKind.Unknown2 };
-}
-
-export function serializeClass(
-  type: ts.InterfaceTypeWithDeclaredMembers,
-  allprops: ts.PropertyName[],
-  ctx: Ctx
-): ReflectedType {
-  const base = type.getBaseTypes()!;
-  let extendsCls: ReflectedType | undefined;
-  if (base.length > 0) {
-    extendsCls = reflectType(base[0], ctx);
+    if (type.getCallSignatures().length) {
+      return {kind: TypeKind.Function }
+    }
+    return { kind: TypeKind.Object, name: name, properties };
   }
 
-  return {
-    kind: TypeKind.Class,
-    name: type.getSymbol()!.getName(),
-    props: allprops,
-    extends: extendsCls
-  };
+  function serializeObject(type: ts.ObjectType): ReflectedType {
+    if (type.objectFlags & ts.ObjectFlags.Reference) {
+      return serializeReference(<ts.TypeReference>type);
+    }
+    const symbol = type.getSymbol()!;
+
+    if (symbol.flags & ts.SymbolFlags.Method) {
+      return {kind: TypeKind.Function }
+    }
+
+    if (symbol.valueDeclaration !== undefined) {
+      const typeName = getIdentifierForSymbol(type);
+      return { kind: TypeKind.Reference, type: typeName, arguments: [] };
+    }
+    return serializeObjectType(type);
+
+    // } else if (type.objectFlags & ts.ObjectFlags.Anonymous) {
+    //   return {
+    //     kind: TypeKind.Reference,
+    //     type: ts.createIdentifier("Object"),
+    //     arguments: []
+    //   };
+    // }
+    // ctx.reportUnknownType(type);
+    // return { kind: TypeKind.Unknown2 };
+  }
+
+  function reflectType(type: ts.Type): ReflectedType {
+    if (type.flags & ts.TypeFlags.Any) {
+      return { kind: TypeKind.Any };
+    } else if (type.flags & ts.TypeFlags.StringLiteral) {
+      return {
+        kind: TypeKind.StringLiteral,
+        value: (type as ts.StringLiteralType).value
+      };
+    } else if (type.flags & ts.TypeFlags.NumberLiteral) {
+      return {
+        kind: TypeKind.NumberLiteral,
+        value: (type as ts.NumberLiteralType).value
+      };
+    } else if (type.flags & ts.TypeFlags.String) {
+      return { kind: TypeKind.String };
+    } else if (type.flags & ts.TypeFlags.Number) {
+      return { kind: TypeKind.Number };
+    } else if (type.flags & ts.TypeFlags.Boolean) {
+      return { kind: TypeKind.Boolean };
+    } else if (type.flags & ts.TypeFlags.BooleanLiteral) {
+      switch ((type as any).intrinsicName) {
+        case "true":
+          return { kind: TypeKind.TrueLiteral };
+        case "false":
+          return { kind: TypeKind.FalseLiteral };
+      }
+    } else if (type.flags & ts.TypeFlags.ESSymbol) {
+      return { kind: TypeKind.ESSymbol };
+    } else if (type.flags & ts.TypeFlags.Void) {
+      return { kind: TypeKind.Void };
+    } else if (type.flags & ts.TypeFlags.Undefined) {
+      return { kind: TypeKind.Undefined };
+    } else if (type.flags & ts.TypeFlags.Null) {
+      return { kind: TypeKind.Null };
+    } else if (type.flags & ts.TypeFlags.Never) {
+      return { kind: TypeKind.Never };
+    } else if (type.flags & ts.TypeFlags.Unknown) {
+      return { kind: TypeKind.Unknown };
+    } else if (type.flags & ts.TypeFlags.Object) {
+      return serializeObject(<ts.ObjectType>type);
+    } else if (type.flags & ts.TypeFlags.Union) {
+      return serializeUnion(<ts.UnionType>type);
+    }
+    ctx.reportUnknownType(type);
+    return { kind: TypeKind.Unknown2 };
+  }
+
+  function reflectClass(
+    type: ts.InterfaceTypeWithDeclaredMembers,
+  ): ClassType {
+    const base = type.getBaseTypes()!;
+    let extendsCls: ReflectedType | undefined;
+    if (base.length > 0) {
+      extendsCls = reflectType(base[0]);
+    }
+    const symbol = type.getSymbol()!;
+    const name = symbol.getName();
+    ctx.checker.getPropertiesOfType(type) //setting declaredProperties
+    const properties = type.declaredProperties.filter(sym => sym.flags & ts.SymbolFlags.Property).map(serializePropertySymbol)
+
+    return {
+      name: name!,
+      properties,
+      kind: TypeKind.Class,
+      extends: extendsCls
+    };
+  }
+  return {reflectClass, reflectType}
 }
