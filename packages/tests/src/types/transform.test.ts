@@ -47,12 +47,12 @@ describe("transform", () => {
   it("shoulldnt reflect all classes", () => {
     expect(getClassType(ShouldntBeReflected)).toBeUndefined();
   });
-  it("should find nested reflect", () => {
+  it("should find reflect in call expression", () => {
     const type = (() => reflect<string>())();
     expect(type).toEqual({ kind: Types.TypeKind.String });
   });
 
-  it("should find reflect in reflect and custom reflect fn", () => {
+  it("should find reflect in reflective call expression, custom reflect fn", () => {
     const type = (() =>
       reflect2<string>(() => {
         return (() => reflect<number>())();

@@ -1,15 +1,8 @@
-import {Reflective, reflect, defineReflectMetadata} from 'tsruntime'
+import {Reflective, reflect, defineReflectMetadata, createReflective} from 'tsruntime'
 
 
 
 
 
-const a = reflect<string>()
-
-
-// @Reflective
-// class B {
-//     d!: string
-// }
-
-const type = (()=>reflect<string>())()
+const reflect3 = createReflective( reflectedType => <T>(arg: number)=>({reflectedType, arg}))
+const a = reflect3<string>(2)

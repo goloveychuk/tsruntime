@@ -86,13 +86,19 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     new Ctx(checker, node, currentScope, markReferenced);
 
   function visitCallExperssion(node: ts.CallExpression) {
+    const visitNodeChildren = () => ts.visitEachChild(node, visitor, context);
     if (!shouldReflect(checker, node)) {
-      return ts.visitEachChild(node, visitor, context);
+      return visitNodeChildren()
     }
+    const ctx = createContext(node)
+    const fnTypeNode = (node.typeArguments || [])[0]
+    if (!fnTypeNode) {
+      ctx.reportWarning('is reflective but don\'t have generic type argument, see docs')
+      return visitNodeChildren()
+    }
+    const type = checker.getTypeAtLocation(fnTypeNode);
 
-    const type = checker.getTypeAtLocation(node.typeArguments![0]);
-
-    const reflectedType = getReflect(createContext(node)).reflectType(type);
+    const reflectedType = getReflect(ctx).reflectType(type);
     const literal = makeLiteral(reflectedType);
 
     const newExpression = ts.createCall(node.expression, undefined, [literal])
