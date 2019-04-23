@@ -1,7 +1,9 @@
 
 {
-    "extends": "../../tsconfig.json",
     "compilerOptions": {
+        "strict": true,
+        "experimentalDecorators": true,
+        "target": "es5",
         "outDir": "dist",
         "sourceMap": false,
         "declaration": false,

@@ -1,8 +1,7 @@
 {
     "name": "tsruntime-tests",
     "version": "2.1.2",
-    "main": "./dist/index.js",
-    "typings": "./dist/index.d.ts",
+    "private": true,
     "scripts": {
         "test": "npm run build && jest --no-cache",
         "build": "rimraf ./dist && ttsc"
