@@ -26,7 +26,7 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
 
     switch (type.kind) {
       case TypeKind.Object:
-      case TypeKind.Class: //todo
+      case TypeKind.Class:
         if (type.name) {
           assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
         }

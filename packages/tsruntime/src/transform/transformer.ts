@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tse from "./typescript-extended";
-import { MetadataKey, REFLECTIVE_KEY } from "../runtime/classUtils";
+import { REFLECTIVE_KEY } from "../runtime/classUtils";
 import { makeLiteral } from "./makeLiteral";
 import { getReflect } from "./reflect";
 import { Ctx, ScopeType } from "./types";
@@ -9,86 +9,103 @@ function getSymbolId(symb: ts.Symbol): number {
   return ((symb as any) as { id: number }).id;
 }
 
-function shouldReflectReflectType(checker: ts.TypeChecker, node: ts.CallExpression) {
+function shouldReflectReflectType(
+  checker: ts.TypeChecker,
+  node: ts.CallExpression
+) {
   const symb = checker.getSymbolAtLocation(node.expression);
   if (!symb) {
     return false;
   }
 
-  let origSymb = symb
+  let origSymb = symb;
   if (symb.flags & ts.SymbolFlags.Alias) {
     origSymb = checker.getAliasedSymbol(symb);
   }
 
-  if (origSymb.getEscapedName() !== "reflect") { //TODO change
+  if (origSymb.getEscapedName() !== "reflect") {
+    //TODO change
     return false;
   }
-  return true
+  return true;
 }
 
-function getReflectiveDecorator(checker: ts.TypeChecker, node: ts.ClassDeclaration) {
-  if (node.decorators === undefined) {
-    return false
-  }
-  for (const dec of node.decorators) {
-    if (dec.kind == ts.SyntaxKind.Decorator) {
-
-      const decType = checker.getTypeAtLocation(dec.expression)
-      let typesToCheck: ts.Type[]
-      if (decType.flags & ts.TypeFlags.UnionOrIntersection) {
-        typesToCheck = (decType as ts.UnionOrIntersectionType).types
-      } else {
-        typesToCheck = [decType]
-      }
-      // checker.getAugmentedPropertiesOfType(decType)
-      for (const t of typesToCheck) {
-        if (t.getProperty(REFLECTIVE_KEY) !== undefined) {
-          return dec
-        }
-      }
-
+function getPropertyInMaybeUnion(
+  checker: ts.TypeChecker,
+  type: ts.Type, propertyName: string) {
+  let typesToCheck: ts.Type[]
+    if (type.flags & ts.TypeFlags.UnionOrIntersection) {
+      typesToCheck = (type as ts.UnionOrIntersectionType).types
+    } else {
+      typesToCheck = [type]
     }
+    // checker.getAugmentedPropertiesOfType(type)
+    return typesToCheck.find(type => Boolean(checker.getPropertyOfType(type, propertyName)))
   }
-  return false
+
+function getReflectiveDecorator(
+  checker: ts.TypeChecker,
+  node: ts.ClassDeclaration
+) {
+  return (node.decorators || [] as Array<ts.Decorator>).find(dec => {
+    if (dec.kind !== ts.SyntaxKind.Decorator) {
+      return false;
+    }
+
+    const decType = checker.getTypeAtLocation(dec.expression);
+    return Boolean(getPropertyInMaybeUnion(checker, decType, REFLECTIVE_KEY));
+   
+  });
 }
 
-function patchEmitResolver(checker: ts.TypeChecker, context: ts.TransformationContext) {
-  let ReferencedSet = new Set<number>()
-      
-  const markReferenced = (symb: ts.Symbol) => ReferencedSet.add(getSymbolId(symb)); 
+function patchEmitResolver(
+  checker: ts.TypeChecker,
+  context: ts.TransformationContext
+) {
+  let ReferencedSet = new Set<number>();
+
+  const markReferenced = (symb: ts.Symbol) =>
+    ReferencedSet.add(getSymbolId(symb));
   ////hack (99
-  const emitResolver = (<tse.TransformationContext>context).getEmitResolver()
-  const oldIsReferenced = emitResolver.isReferencedAliasDeclaration
-  emitResolver.isReferencedAliasDeclaration = function (node: ts.Node, checkChildren?: boolean) {
-    const res = oldIsReferenced(node, checkChildren)
+  const emitResolver = (<tse.TransformationContext>context).getEmitResolver();
+  const oldIsReferenced = emitResolver.isReferencedAliasDeclaration;
+  emitResolver.isReferencedAliasDeclaration = function(
+    node: ts.Node,
+    checkChildren?: boolean
+  ) {
+    const res = oldIsReferenced(node, checkChildren);
     if (res === true) {
-      return true
+      return true;
     }
     if (node.kind === ts.SyntaxKind.ImportSpecifier) {
-      const name = (<ts.ImportSpecifier>node).name
-      const origSymb = checker.getAliasedSymbol(checker.getSymbolAtLocation(name)!)
+      const name = (<ts.ImportSpecifier>node).name;
+      const origSymb = checker.getAliasedSymbol(
+        checker.getSymbolAtLocation(name)!
+      );
       // const symb = checker.getSymbolAtLocation(name)
-      return ReferencedSet.has(getSymbolId(origSymb))
+      return ReferencedSet.has(getSymbolId(origSymb));
     }
-    return true
-  }
+    return true;
+  };
 
   const onNewSourceFile = () => {
-    ReferencedSet.clear()
-  }
-  return {markReferenced, onNewSourceFile }
+    ReferencedSet.clear();
+  };
+  return { markReferenced, onNewSourceFile };
 }
 
-
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
-
   let currentScope: ScopeType;
 
   const checker = program.getTypeChecker();
 
-  const {markReferenced, onNewSourceFile} = patchEmitResolver(checker, context)
+  const { markReferenced, onNewSourceFile } = patchEmitResolver(
+    checker,
+    context
+  );
 
-  const createContext = (node: ts.Node) => new Ctx(checker, node, currentScope, markReferenced);
+  const createContext = (node: ts.Node) =>
+    new Ctx(checker, node, currentScope, markReferenced);
 
   function visitCallExperssion(node: ts.CallExpression) {
     if (!shouldReflectReflectType(checker, node)) {
@@ -103,33 +120,32 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     return literal;
   }
 
-
   function visitClassDeclaration(node: tse.ClassDeclaration) {
-    const reflectiveDecorator = getReflectiveDecorator(checker, node)
+    const reflectiveDecorator = getReflectiveDecorator(checker, node);
     if (!reflectiveDecorator) {
       return node;
     }
     const type = checker.getTypeAtLocation(node);
 
-    const reflectedType = getReflect(createContext(node)).reflectClass(<ts.InterfaceTypeWithDeclaredMembers>type) 
+    const reflectedType = getReflect(createContext(node)).reflectClass(<
+      ts.InterfaceTypeWithDeclaredMembers
+    >type);
     const literal = makeLiteral(reflectedType);
-    
 
-    const newDecorators = node.decorators!.map( dec => {
+    const newDecorators = node.decorators!.map(dec => {
       if (dec !== reflectiveDecorator) {
-        return dec
+        return dec;
       }
-      const newExpression = ts.createCall(dec.expression, undefined, [literal])
-      return ts.updateDecorator(dec, newExpression)
-    })
+      const newExpression = ts.createCall(dec.expression, undefined, [literal]);
+      return ts.updateDecorator(dec, newExpression);
+    });
 
-    const newNode = ts.getMutableClone(node)
-    newNode.decorators = ts.createNodeArray(newDecorators)
-    return newNode
+    const newNode = ts.getMutableClone(node);
+    newNode.decorators = ts.createNodeArray(newDecorators);
+    return newNode;
     // return node
-
   }
-  
+
   function onBeforeVisitNode(node: ts.Node) {
     switch (node.kind) {
       case ts.SyntaxKind.SourceFile:
@@ -142,7 +158,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     onBeforeVisitNode(node);
     switch (node.kind) {
       case ts.SyntaxKind.ClassDeclaration:
-        return visitClassDeclaration(<tse.ClassDeclaration>node)
+        return visitClassDeclaration(<tse.ClassDeclaration>node);
       case ts.SyntaxKind.CallExpression:
         const res = visitCallExperssion(<ts.CallExpression>node);
         return ts.visitEachChild(res, visitor, context);
@@ -152,7 +168,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
 
   function transform(sourceI: ts.SourceFile): ts.SourceFile {
-    onNewSourceFile()
+    onNewSourceFile();
 
     const source = sourceI as tse.SourceFile;
     if (source.isDeclarationFile) {

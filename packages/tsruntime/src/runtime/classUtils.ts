@@ -13,10 +13,10 @@ type UnprocessedDecorator = (type: ReflectedType) => (target: any) => void
 
 
 export function createReflectiveDecorator(fn: UnprocessedDecorator) {
-  return fn as any as ReflectiveDecorator
+  return fn as any as ReflectiveDecorator 
 }
 
-export const MetadataKey = "tsruntime:type"
+const MetadataKey = Symbol("tsruntime:type")
 
 export function defineReflectMetadata(target: any, reflectedType: ReflectedType) {
   Reflect.defineMetadata(MetadataKey, reflectedType, target)
