@@ -26,7 +26,7 @@ function shouldReflectReflectType(checker: ts.TypeChecker, node: ts.CallExpressi
   return true
 }
 
-function shouldReflectClass(checker: ts.TypeChecker, node: ts.ClassDeclaration) {
+function getReflectiveDecorator(checker: ts.TypeChecker, node: ts.ClassDeclaration) {
   if (node.decorators === undefined) {
     return false
   }
@@ -40,9 +40,10 @@ function shouldReflectClass(checker: ts.TypeChecker, node: ts.ClassDeclaration) 
       } else {
         typesToCheck = [decType]
       }
+      // checker.getAugmentedPropertiesOfType(decType)
       for (const t of typesToCheck) {
         if (t.getProperty(REFLECTIVE_KEY) !== undefined) {
-          return true
+          return dec
         }
       }
 
@@ -51,23 +52,52 @@ function shouldReflectClass(checker: ts.TypeChecker, node: ts.ClassDeclaration) 
   return false
 }
 
+function patchEmitResolver(checker: ts.TypeChecker, context: ts.TransformationContext) {
+  let ReferencedSet = new Set<number>()
+      
+  const markReferenced = (symb: ts.Symbol) => ReferencedSet.add(getSymbolId(symb)); 
+  ////hack (99
+  const emitResolver = (<tse.TransformationContext>context).getEmitResolver()
+  const oldIsReferenced = emitResolver.isReferencedAliasDeclaration
+  emitResolver.isReferencedAliasDeclaration = function (node: ts.Node, checkChildren?: boolean) {
+    const res = oldIsReferenced(node, checkChildren)
+    if (res === true) {
+      return true
+    }
+    if (node.kind === ts.SyntaxKind.ImportSpecifier) {
+      const name = (<ts.ImportSpecifier>node).name
+      const origSymb = checker.getAliasedSymbol(checker.getSymbolAtLocation(name)!)
+      // const symb = checker.getSymbolAtLocation(name)
+      return ReferencedSet.has(getSymbolId(origSymb))
+    }
+    return true
+  }
+
+  const onNewSourceFile = () => {
+    ReferencedSet.clear()
+  }
+  return {markReferenced, onNewSourceFile }
+}
+
 
 function Transformer(program: ts.Program, context: ts.TransformationContext) {
-  // let ReferencedSet = new Set<number>()
 
   let currentScope: ScopeType;
 
   const checker = program.getTypeChecker();
 
+  const {markReferenced, onNewSourceFile} = patchEmitResolver(checker, context)
+
+  const createContext = (node: ts.Node) => new Ctx(checker, node, currentScope, markReferenced);
+
   function visitCallExperssion(node: ts.CallExpression) {
     if (!shouldReflectReflectType(checker, node)) {
       return node;
     }
-    const ctx = new Ctx(checker, node, currentScope);
 
     const argType = checker.getTypeAtLocation(node.typeArguments![0]);
 
-    const reflectedType = getReflect(ctx).reflectType(argType);
+    const reflectedType = getReflect(createContext(node)).reflectType(argType);
     const literal = makeLiteral(reflectedType);
 
     return literal;
@@ -75,18 +105,27 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
 
 
   function visitClassDeclaration(node: tse.ClassDeclaration) {
-    if (!shouldReflectClass(checker, node)) {
-      return node
+    const reflectiveDecorator = getReflectiveDecorator(checker, node)
+    if (!reflectiveDecorator) {
+      return node;
     }
     const type = checker.getTypeAtLocation(node);
 
-    const ctx = new Ctx(checker, node, currentScope);
-
-
-    const reflectedType = getReflect(ctx).reflectClass(type as any) //todo
+    const reflectedType = getReflect(createContext(node)).reflectClass(<ts.InterfaceTypeWithDeclaredMembers>type) 
     const literal = makeLiteral(reflectedType);
     
-    return literal
+
+    const newDecorators = node.decorators!.map( dec => {
+      if (dec !== reflectiveDecorator) {
+        return dec
+      }
+      const newExpression = ts.createCall(dec.expression, undefined, [literal])
+      return ts.updateDecorator(dec, newExpression)
+    })
+
+    const newNode = ts.getMutableClone(node)
+    newNode.decorators = ts.createNodeArray(newDecorators)
+    return newNode
     // return node
 
   }
@@ -113,6 +152,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   }
 
   function transform(sourceI: ts.SourceFile): ts.SourceFile {
+    onNewSourceFile()
+
     const source = sourceI as tse.SourceFile;
     if (source.isDeclarationFile) {
       return source;

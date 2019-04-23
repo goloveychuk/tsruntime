@@ -1,18 +1,15 @@
-import {Reflective, reflect} from 'tsruntime'
+import {Reflective, reflect, createReflectiveDecorator, defineReflectMetadata} from 'tsruntime'
 
-@Reflective
-class TestClass extends Array<string> {
-  "str": string;
-  "str-str": string;
-  42: string;
-  get computed() {
-    return "string";
-  }
-  [Symbol.toPrimitive]() {
-    return 23;
-  }
-  method() {
-    return "asd";
-  }
+const Reflective2 = (re: string)=> {
+    return createReflectiveDecorator(reflectedType => target => {
+        defineReflectMetadata(target, reflectedType)
+    })
+}
+
+
+
+@Reflective2('s')
+class TestClass  extends Array {
+    myprop = 'asd'
 }
 

@@ -1,4 +1,4 @@
-import { Reflective, Types, getType } from "tsruntime";
+import { Reflective, Types, getClassType } from "tsruntime";
 
 @Reflective
 class TestClass extends Array<string> {
@@ -23,7 +23,7 @@ class TestClass2 extends TestClass {
 
 describe("Class Decoration", () => {
   it("should decorate null properties", () => {
-    const type = getType(TestClass) as Types.ClassType;
+    const type = getClassType(TestClass)
 
     expect(type).toEqual({
       name: "TestClass",

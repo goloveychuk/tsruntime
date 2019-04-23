@@ -36,6 +36,9 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
             ts.createPropertyAssignment(getExpressionForPropertyName(name), makeLiteral(type))
         ))))
         break
+    }
+    switch (type.kind) {
+      
       case TypeKind.Tuple:
         assigns.push(ts.createPropertyAssignment("elementTypes", ts.createArrayLiteral(type.elementTypes.map(makeLiteral))))
         break
@@ -51,8 +54,6 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
         assigns.push(ts.createPropertyAssignment("arguments", ts.createArrayLiteral(type.arguments.map(makeLiteral))))
         break
       case TypeKind.Class:
-        assigns.push(ts.createPropertyAssignment("name", ts.createLiteral(type.name)))
-        // assigns.push(ts.createPropertyAssignment("props", ts.createArrayLiteral(type.props.map(getExpressionForPropertyName))))
         if (type.extends !== undefined) {
           assigns.push(ts.createPropertyAssignment("extends", makeLiteral(type.extends)))
         }

@@ -142,7 +142,16 @@ export function getReflect(ctx: Ctx) {
     const serializedType = reflectType(type);
 
     const name = getPropertyName(sym);
-    return { name: name, type: serializedType };
+    let initializer = undefined
+    if (ts.isPropertyDeclaration(sym.valueDeclaration)) {
+        
+      if (sym.valueDeclaration.initializer) {
+          initializer = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, sym.valueDeclaration.initializer)
+      }
+    }
+    
+      
+    return { name: name, type: {...serializedType, initializer} };
   }
 
   function serializeObjectType(type: ts.ObjectType): ReflectedType {

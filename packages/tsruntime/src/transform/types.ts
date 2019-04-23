@@ -16,7 +16,7 @@ export class Ctx {
     readonly checker: ts.TypeChecker,
     readonly node: ts.Node,
     readonly currentScope: ScopeType,
-    readonly markReferenced?: (symb: ts.Symbol) => void
+    readonly markReferenced: undefined | ((symb: ts.Symbol) => void)
   ) {}
 
   reportUnknownType = (type: ts.Type) => {

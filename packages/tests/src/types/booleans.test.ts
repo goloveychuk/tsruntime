@@ -1,4 +1,4 @@
-import { Reflective, getType, Types, reflect } from 'tsruntime'
+import { Types, reflect } from 'tsruntime'
 import {expectUnion} from '../utils'
 
 
