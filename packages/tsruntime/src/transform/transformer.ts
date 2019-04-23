@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tse from "./typescript-extended";
-import { REFLECTIVE_KEY } from "../runtime/classUtils";
+import { REFLECTIVE_KEY } from "../runtime/common";
 import { makeLiteral } from "./makeLiteral";
 import { getReflect } from "./reflect";
 import { Ctx, ScopeType } from "./types";
@@ -13,20 +13,23 @@ function shouldReflectReflectType(
   checker: ts.TypeChecker,
   node: ts.CallExpression
 ) {
-  const symb = checker.getSymbolAtLocation(node.expression);
-  if (!symb) {
-    return false;
-  }
+  const type = checker.getTypeAtLocation(node.expression);
 
-  let origSymb = symb;
-  if (symb.flags & ts.SymbolFlags.Alias) {
-    origSymb = checker.getAliasedSymbol(symb);
-  }
+  return Boolean(getPropertyInMaybeUnion(checker, type, REFLECTIVE_KEY))
+  // const symb = checker.getSymbolAtLocation(node.expression);
+  // if (!symb) {
+  //   return false;
+  // }
 
-  if (origSymb.getEscapedName() !== "reflect") {
-    //TODO change
-    return false;
-  }
+  // let origSymb = symb;
+  // if (symb.flags & ts.SymbolFlags.Alias) {
+  //   origSymb = checker.getAliasedSymbol(symb);
+  // }
+
+  // if (origSymb.getEscapedName() !== "reflect") {
+  //   //TODO change
+  //   return false;
+  // }
   return true;
 }
 

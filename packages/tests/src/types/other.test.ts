@@ -17,6 +17,7 @@ interface Optional {
 const optionalInterfaceType = reflect<Optional>() as Types.ObjectType;
 
 
+
 describe('optional', () => {
     it('optional', ()=> {
         const type = optionalInterfaceType.properties['optional']

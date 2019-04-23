@@ -1,3 +1,7 @@
-import {ReflectedType} from './publicTypes'
+import { createReflective } from "./common";
+//@ts-ignore
+import {MarkReflective} from './common'
 
-export declare function reflect<T>(): ReflectedType
+export const reflect = createReflective(reflectedType => <T>()=> {
+    return reflectedType
+}) 

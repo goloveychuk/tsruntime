@@ -1,12 +1,12 @@
 import {
-  createReflectiveDecorator,
+  createReflective,
   Types,
   getClassType,
   defineReflectMetadata
 } from "tsruntime";
 
 const Reflective2 = (res: string) =>
-  createReflectiveDecorator(reflectedType => target => {
+createReflective(reflectedType => (target: any) => {
     target.lol = res
     defineReflectMetadata(target, reflectedType);
   });

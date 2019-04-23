@@ -1,15 +1,7 @@
-import {Reflective, reflect, createReflectiveDecorator, defineReflectMetadata} from 'tsruntime'
-
-const Reflective2 = (re: string)=> {
-    return createReflectiveDecorator(reflectedType => target => {
-        defineReflectMetadata(target, reflectedType)
-    })
-}
+import {Reflective, reflect, defineReflectMetadata} from 'tsruntime'
 
 
 
-@Reflective2('s')
-class TestClass  extends Array {
-    myprop = 'asd'
-}
 
+
+const a = reflect<string>()
