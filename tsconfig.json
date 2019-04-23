@@ -2,7 +2,6 @@
 {
     "compilerOptions": {
         "target": "es5",
-        "outDir": "dist",
         "module": "commonjs",
         "moduleResolution": "node",
         "skipDefaultLibCheck": true,
@@ -12,9 +11,9 @@
         "noUnusedLocals": false,
         "noUnusedParameters": false,
         "noFallthroughCasesInSwitch": true,
-        "removeComments": true,
+        "removeComments": false,
         "strict": true,
-        "lib": ["dom", "es2015"]
+        "lib": ["dom", "es2015"],
     },
     "include": [
         "src/**/*"

@@ -1,0 +1,15 @@
+
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "dist",
+        "sourceMap": false,
+        "declaration": false,
+        "plugins": [
+            { "transform": "../tsruntime/dist/transform/transformer.js", "type": "program" },
+        ],
+    },
+    "include": [
+        "src/**/*"
+    ]
+}

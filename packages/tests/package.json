@@ -1,0 +1,28 @@
+{
+    "name": "tsruntime-tests",
+    "version": "2.1.2",
+    "main": "./dist/index.js",
+    "typings": "./dist/index.d.ts",
+    "scripts": {
+        "test": "npm run build && jest --no-cache",
+        "build": "rimraf ./dist && ttsc"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/goloveychuk/tsruntime.git"
+    },
+    "keywords": [
+      "typescript",
+      "reflect",
+      "runtime"
+    ],
+    "bugs": {
+      "url": "https://github.com/goloveychuk/tsruntime/issues"
+    },
+    "homepage": "https://github.com/goloveychuk/tsruntime",
+    "license": "MIT",
+    "dependencies": {
+        "tsruntime": "*"
+    }
+  }
+  
