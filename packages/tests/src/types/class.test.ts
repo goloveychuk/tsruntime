@@ -1,4 +1,6 @@
 import { Reflective, Types, getClassType } from "tsruntime";
+import { TestClass3 } from "./module2";
+import { ExportedClass } from "./module";
 
 @Reflective
 class TestClass extends Array<string> {
@@ -16,13 +18,21 @@ class TestClass extends Array<string> {
   }
 }
 
+
+
 @Reflective
 class TestClass2 extends TestClass {
   newProp!: string;
 }
 
+
+
+class ShouldntBeReflected {
+  prop!: string
+}
+
 describe("Class Decoration", () => {
-  it("should decorate null properties", () => {
+  it("should decorate cls", () => {
     const type = getClassType(TestClass)
 
     expect(type).toEqual({
@@ -40,4 +50,33 @@ describe("Class Decoration", () => {
       }
     });
   });
+
+  it("should decorate cls", () => {
+    const type = getClassType(TestClass2)
+
+    expect(type).toEqual({
+      name: "TestClass2",
+      kind: Types.TypeKind.Class,
+      extends: {
+        kind: Types.TypeKind.Reference,
+        type: TestClass,
+        arguments: []
+      },
+      properties: {
+        newProp: { kind: Types.TypeKind.String },
+      }
+    });
+  });
+  it('shouldnt clean not used references', () => {
+    expect(getClassType(TestClass3)).toEqual({
+      name: "TestClass3",
+      kind: Types.TypeKind.Class,
+      properties: {
+        exported: { kind: Types.TypeKind.Reference, type: ExportedClass, arguments: [] },
+      }
+    })
+  })
+  it("shoulldnt reflect all classes", () => {
+    expect(getClassType(ShouldntBeReflected)).toBeUndefined()
+  })
 });

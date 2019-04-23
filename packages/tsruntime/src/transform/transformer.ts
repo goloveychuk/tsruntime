@@ -47,7 +47,7 @@ function getReflectiveDecorator(
   checker: ts.TypeChecker,
   node: ts.ClassDeclaration
 ) {
-  return (node.decorators || [] as Array<ts.Decorator>).find(dec => {
+  return (node.decorators || []).find(dec => {
     if (dec.kind !== ts.SyntaxKind.Decorator) {
       return false;
     }
