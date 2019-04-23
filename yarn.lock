@@ -4527,7 +4527,7 @@ path-key@^2.0.0, path-key@^2.0.1:
   resolved "https://registry.yarnpkg.com/path-key/-/path-key-2.0.1.tgz#411cadb574c5a140d3a4b1910d40d80cc9f40b40"
   integrity sha1-QRyttXTFoUDTpLGRDUDYDMn0C0A=
 
-path-parse@^1.0.5:
+path-parse@^1.0.5, path-parse@^1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/path-parse/-/path-parse-1.0.6.tgz#d62dbb5679405d72c4737ec58600e9ddcf06d24c"
   integrity sha512-GSmOT2EbHrINBf9SR7CDELwlJ8AENk3Qn7OikK4nFYAu3Ote2+JYNVvkpAEQm3/TLNEJFD/xZJjzyxg3KBWOzw==
@@ -4982,12 +4982,19 @@ resolve@1.1.7:
   resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.1.7.tgz#203114d82ad2c5ed9e8e0411b3932875e889e97b"
   integrity sha1-IDEU2CrSxe2ejgQRs5ModeiJ6Xs=
 
-resolve@1.x, resolve@^1.7.1:
+resolve@1.x:
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.8.1.tgz#82f1ec19a423ac1fbd080b0bab06ba36e84a7a26"
   integrity sha512-AicPrAC7Qu1JxPCZ9ZgCZlY35QgFnNqc+0LtbRNxnVw4TXvjQ72wnuL9JQcEBgXkI9JM8MsT9kaQoHcpCRJOYA==
   dependencies:
     path-parse "^1.0.5"
+
+resolve@^1.9.0:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/resolve/-/resolve-1.10.0.tgz#3bdaaeaf45cc07f375656dfd2e54ed0810b101ba"
+  integrity sha512-3sUr9aq5OfSg2S9pNtPA9hL1FVEAjvfOC4leW0SNf/mpnaakz2a9femSd6LqAww2RaFctwyf1lCqnTHuF1rxDg==
+  dependencies:
+    path-parse "^1.0.6"
 
 restore-cursor@^2.0.0:
   version "2.0.0"
@@ -5648,10 +5655,10 @@ ts-jest@^23.10.4:
     semver "^5.5"
     yargs-parser "10.x"
 
-ts-node@^6.0.2:
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-6.2.0.tgz#65a0ae2acce319ea4fd7ac8d7c9f1f90c5da6baf"
-  integrity sha512-ZNT+OEGfUNVMGkpIaDJJ44Zq3Yr0bkU/ugN1PHbU+/01Z7UV1fsELRiTx1KuQNvQ1A3pGh3y25iYF6jXgxV21A==
+ts-node@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-7.0.1.tgz#9562dc2d1e6d248d24bc55f773e3f614337d9baf"
+  integrity sha512-BVwVbPJRspzNh2yfslyT1PSbl5uIk03EZlb493RKHN4qej/D06n1cEhjlOJG69oFsE7OT8XjpTUcYf6pKTLMhw==
   dependencies:
     arrify "^1.0.0"
     buffer-from "^1.1.0"
@@ -5667,13 +5674,13 @@ tslib@^1.9.0:
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.9.3.tgz#d7e4dd79245d85428c4d7e4822a79917954ca286"
   integrity sha512-4krF8scpejhaOgqzBEcGM7yDIEfi0/8+8zDRZhNZZ2kjmHJ4hv3zCbQWxoJGz1iw5U0Jl0nma13xzHXcncMavQ==
 
-ttypescript@^1.5.5:
-  version "1.5.5"
-  resolved "https://registry.yarnpkg.com/ttypescript/-/ttypescript-1.5.5.tgz#c8f7837764f01672911bfd5047f847c5df524842"
-  integrity sha512-ke01qTl2su6pzE9T9b1BgmtAq5kVqXzpiP4x0wiIme0nG+suR+eiZTC4tWA6EKn1mHaH4b86G4QOOhLIxEH9FA==
+ttypescript@1.5.6:
+  version "1.5.6"
+  resolved "https://registry.yarnpkg.com/ttypescript/-/ttypescript-1.5.6.tgz#b87908009ade01b880b86d91699a14f8ab057a8a"
+  integrity sha512-+JbeQt3W+VJMsnvDMVX2/LojRJqLBQzQWE1hI5ZTR2+9EoWXnQ4fUD+tMWCCda1LY2Z5EtwWWrWYmNziw4CYZA==
   dependencies:
-    resolve "^1.7.1"
-    ts-node "^6.0.2"
+    resolve "^1.9.0"
+    ts-node "^7.0.1"
 
 tunnel-agent@^0.6.0:
   version "0.6.0"
@@ -5699,10 +5706,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@3.1.6:
-  version "3.1.6"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.1.6.tgz#b6543a83cfc8c2befb3f4c8fba6896f5b0c9be68"
-  integrity sha512-tDMYfVtvpb96msS1lDX9MEdHrW4yOuZ4Kdc4Him9oU796XldPYF/t2+uKoX0BBa0hXXwDlqYQbXY5Rzjzc5hBA==
+typescript@3.4.4:
+  version "3.4.4"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.4.4.tgz#aac4a08abecab8091a75f10842ffa0631818f785"
+  integrity sha512-xt5RsIRCEaf6+j9AyOBgvVuAec0i92rgCaS3S+UVf5Z/vF2Hvtsw08wtUTJqp4djwznoAgjSxeCcU4r+CcDBJA==
 
 uglify-js@^3.1.4:
   version "3.4.9"
