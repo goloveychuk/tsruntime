@@ -9,57 +9,32 @@ function getSymbolId(symb: ts.Symbol): number {
   return ((symb as any) as { id: number }).id;
 }
 
-function shouldReflectReflectType(
+function shouldReflect(
   checker: ts.TypeChecker,
-  node: ts.CallExpression
+  node: ts.CallExpression | ts.Decorator
 ) {
   const type = checker.getTypeAtLocation(node.expression);
 
-  return Boolean(getPropertyInMaybeUnion(checker, type, REFLECTIVE_KEY))
-  // const symb = checker.getSymbolAtLocation(node.expression);
-  // if (!symb) {
-  //   return false;
-  // }
-
-  // let origSymb = symb;
-  // if (symb.flags & ts.SymbolFlags.Alias) {
-  //   origSymb = checker.getAliasedSymbol(symb);
-  // }
-
-  // if (origSymb.getEscapedName() !== "reflect") {
-  //   //TODO change
-  //   return false;
-  // }
-  return true;
+  return Boolean(getPropertyInMaybeUnion(checker, type, REFLECTIVE_KEY));
 }
 
 function getPropertyInMaybeUnion(
   checker: ts.TypeChecker,
-  type: ts.Type, propertyName: string) {
-  let typesToCheck: ts.Type[]
-    if (type.flags & ts.TypeFlags.UnionOrIntersection) {
-      typesToCheck = (type as ts.UnionOrIntersectionType).types
-    } else {
-      typesToCheck = [type]
-    }
-    // checker.getAugmentedPropertiesOfType(type)
-    return typesToCheck.find(type => Boolean(checker.getPropertyOfType(type, propertyName)))
+  type: ts.Type,
+  propertyName: string
+) {
+  let typesToCheck: ts.Type[];
+  if (type.flags & ts.TypeFlags.UnionOrIntersection) {
+    typesToCheck = (type as ts.UnionOrIntersectionType).types;
+  } else {
+    typesToCheck = [type];
   }
 
-function getReflectiveDecorator(
-  checker: ts.TypeChecker,
-  node: ts.ClassDeclaration
-) {
-  return (node.decorators || []).find(dec => {
-    if (dec.kind !== ts.SyntaxKind.Decorator) {
-      return false;
-    }
-
-    const decType = checker.getTypeAtLocation(dec.expression);
-    return Boolean(getPropertyInMaybeUnion(checker, decType, REFLECTIVE_KEY));
-   
-  });
+  return typesToCheck.find(type =>
+    Boolean(checker.getPropertyOfType(type, propertyName))
+  );
 }
+
 
 function patchEmitResolver(
   checker: ts.TypeChecker,
@@ -111,42 +86,41 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     new Ctx(checker, node, currentScope, markReferenced);
 
   function visitCallExperssion(node: ts.CallExpression) {
-    if (!shouldReflectReflectType(checker, node)) {
-      return node;
+    if (!shouldReflect(checker, node)) {
+      return ts.visitEachChild(node, visitor, context);
     }
 
-    const argType = checker.getTypeAtLocation(node.typeArguments![0]);
+    const type = checker.getTypeAtLocation(node.typeArguments![0]);
 
-    const reflectedType = getReflect(createContext(node)).reflectType(argType);
+    const reflectedType = getReflect(createContext(node)).reflectType(type);
     const literal = makeLiteral(reflectedType);
 
-    return literal;
+    const newExpression = ts.createCall(node.expression, undefined, [literal])
+    return ts.updateCall(node, newExpression, node.typeArguments, ts.visitNodes(node.arguments, visitor))
   }
 
-  function visitClassDeclaration(node: tse.ClassDeclaration) {
-    const reflectiveDecorator = getReflectiveDecorator(checker, node);
-    if (!reflectiveDecorator) {
+  function visitDecotaror(node: ts.Decorator) {
+    if (!shouldReflect(checker, node)) {
       return node;
     }
-    const type = checker.getTypeAtLocation(node);
 
-    const reflectedType = getReflect(createContext(node)).reflectClass(<
+    const ctx = createContext(node)
+
+    const classDeclaration = node.parent
+    
+    const type = checker.getTypeAtLocation(classDeclaration);
+
+    if (classDeclaration.kind !== ts.SyntaxKind.ClassDeclaration) {
+      ctx.reportWarning('cant find decorator\'s class declaration')
+      return node
+    }
+    const reflectedType = getReflect(ctx).reflectClass(<
       ts.InterfaceTypeWithDeclaredMembers
     >type);
     const literal = makeLiteral(reflectedType);
 
-    const newDecorators = node.decorators!.map(dec => {
-      if (dec !== reflectiveDecorator) {
-        return dec;
-      }
-      const newExpression = ts.createCall(dec.expression, undefined, [literal]);
-      return ts.updateDecorator(dec, newExpression);
-    });
-
-    const newNode = ts.getMutableClone(node);
-    newNode.decorators = ts.createNodeArray(newDecorators);
-    return newNode;
-    // return node
+    const newExpression = ts.createCall(node.expression, undefined, [literal]);
+    return ts.updateDecorator(node, newExpression);
   }
 
   function onBeforeVisitNode(node: ts.Node) {
@@ -160,11 +134,10 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
   function visitor(node: ts.Node): ts.VisitResult<ts.Node> {
     onBeforeVisitNode(node);
     switch (node.kind) {
-      case ts.SyntaxKind.ClassDeclaration:
-        return visitClassDeclaration(<tse.ClassDeclaration>node);
+      case ts.SyntaxKind.Decorator:
+        return visitDecotaror(<ts.Decorator>node);
       case ts.SyntaxKind.CallExpression:
-        const res = visitCallExperssion(<ts.CallExpression>node);
-        return ts.visitEachChild(res, visitor, context);
+        return visitCallExperssion(<ts.CallExpression>node);
       default:
         return ts.visitEachChild(node, visitor, context);
     }
