@@ -1,6 +1,6 @@
 {
   "name": "tsruntime",
-  "version": "2.1.2",
+  "version": "3.0.0-beta.1",
   "main": "./dist/runtime/index.js",
   "typings": "./dist/runtime/index.d.ts",
   "scripts": {

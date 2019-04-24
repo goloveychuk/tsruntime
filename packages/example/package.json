@@ -3,7 +3,7 @@
     "private": true,
     "description": "description",
     "authors": "author",
-    "version": "2.1.2",
+    "version": "3.0.0-beta.1",
     "scripts": {
         "build": "ttsc",
         "tsnode": "ts-node --compiler=ttypescript src/index.ts"

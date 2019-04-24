@@ -1,6 +1,6 @@
 {
     "name": "tsruntime-tests",
-    "version": "2.1.2",
+    "version": "3.0.0-beta.1",
     "private": true,
     "scripts": {
         "test": "npm run build && jest --no-cache",
@@ -21,7 +21,7 @@
     "homepage": "https://github.com/goloveychuk/tsruntime",
     "license": "MIT",
     "dependencies": {
-        "tsruntime": "*"
+        "tsruntime": "3.0.0-beta.1"
     }
   }
   
