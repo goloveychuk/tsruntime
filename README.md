@@ -21,7 +21,7 @@ It's docs for v3. For v2 go [here](https://github.com/goloveychuk/tsruntime/blob
     "compilerOptions": {
         "experimentalDecorators": true, // if you'll use decorators
         "plugins": [
-            { "transform": "tsruntime/transformer.js", "type": "program" },
+            { "transform": "tsruntime/dist/transform/transformer.js", "type": "program" },
         ],
     }
 }
