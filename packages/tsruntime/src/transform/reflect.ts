@@ -137,19 +137,20 @@ export function getReflect(ctx: Ctx) {
     }
   }
 
+  function serializeInitializer(decl: {initializer?: ts.Expression}): ts.ArrowFunction | undefined {
+    return decl.initializer
+      ? ts.createArrowFunction(undefined, undefined, [], undefined, undefined, decl.initializer)
+      : undefined;
+  }
+
   function serializePropertySymbol(sym: ts.Symbol) {
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = reflectType(type);
 
     const name = getPropertyName(sym);
-    let initializer = undefined
-    if (ts.isPropertyDeclaration(sym.valueDeclaration)) {
-        
-      if (sym.valueDeclaration.initializer) {
-          initializer = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, sym.valueDeclaration.initializer)
-      }
-    }
-    
+    const initializer = ts.isPropertyDeclaration(sym.valueDeclaration)
+      ? serializeInitializer(sym.valueDeclaration)
+      : undefined;
       
     return { name: name, type: {...serializedType, initializer} };
   }
@@ -159,12 +160,9 @@ export function getReflect(ctx: Ctx) {
     const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
     const modifiers = ts.getCombinedModifierFlags(decl);
 
-    let initializer = undefined;
-    if (ts.isParameter(param.valueDeclaration)) {
-      if (param.valueDeclaration.initializer) {
-        initializer = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, param.valueDeclaration.initializer);
-      }
-    }
+    const initializer = ts.isParameter(param.valueDeclaration)
+      ? serializeInitializer(param.valueDeclaration)
+      : undefined;
 
     return {
       name: param.getName(),
