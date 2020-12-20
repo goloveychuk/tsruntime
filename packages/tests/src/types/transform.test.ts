@@ -41,7 +41,8 @@ describe("transform", () => {
           type: ExportedClass,
           arguments: []
         }
-      }
+      },
+      constructors: [{modifiers: 0, parameters: []}],
     });
   });
   it("shoulldnt reflect all classes", () => {
@@ -70,7 +71,8 @@ describe("transform", () => {
       kind: Types.TypeKind.Class,
       properties: {
         prop: { kind: Types.TypeKind.String }
-      }
+      },
+      constructors: [{modifiers: 0, parameters: []}],
     });
   });
 });

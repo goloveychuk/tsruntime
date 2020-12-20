@@ -28,7 +28,7 @@ class TestClass2 extends TestClass {
 
 
 describe("Class Decoration", () => {
-  it("should decorate cls", () => {
+  it("should decorate TestClass", () => {
     const type = getClassType(TestClass)
 
     expect(type).toEqual({
@@ -43,11 +43,37 @@ describe("Class Decoration", () => {
         str: { kind: Types.TypeKind.String },
         "str-str": { kind: Types.TypeKind.String },
         42: { kind: Types.TypeKind.String }
-      }
+      },
+      constructors: [
+        {
+          modifiers: 0,
+          parameters: [
+            {
+              name: "arrayLength",
+              type: { kind: Types.TypeKind.Number },
+              modifiers: 0,
+            }
+          ]
+        },
+        {
+          modifiers: 0,
+          parameters: [
+            {
+              name: "items",
+              type: {
+                kind: Types.TypeKind.Reference,
+                type: Array,
+                arguments: [{ kind: Types.TypeKind.String }]
+              },
+              modifiers: 0,
+            }
+          ]
+        }
+      ],
     });
   });
 
-  it("should decorate cls", () => {
+  it("should decorate TestClass2", () => {
     const type = getClassType(TestClass2)
 
     expect(type).toEqual({
@@ -60,7 +86,33 @@ describe("Class Decoration", () => {
       },
       properties: {
         newProp: { kind: Types.TypeKind.String },
-      }
+      },
+      constructors: [
+        {
+          modifiers: 0,
+          parameters: [
+            {
+              name: "arrayLength",
+              type: { kind: Types.TypeKind.Number },
+              modifiers: 0,
+            }
+          ]
+        },
+        {
+          modifiers: 0,
+          parameters: [
+            {
+              name: "items",
+              type: {
+                kind: Types.TypeKind.Reference,
+                type: Array,
+                arguments: [{ kind: Types.TypeKind.String }]
+              },
+              modifiers: 0,
+            }
+          ]
+        }
+      ]
     });
   });
 

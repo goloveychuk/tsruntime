@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { ReflectedType, TypeKind, Ctx, ObjectType, ClassType } from "./types";
+import {ClassType, Constructor, ConstructorParameter, Ctx, ReflectedType, TypeKind} from "./types";
 
 function arrToObj<V>(arr: Array<[string, V]>) {
   const res: { [key: string]: V } = {};
@@ -154,6 +154,29 @@ export function getReflect(ctx: Ctx) {
     return { name: name, type: {...serializedType, initializer} };
   }
 
+  function serializeConstructorParameter(param: ts.Symbol): ConstructorParameter {
+    const decl = param.declarations[0];
+    const type = ctx.checker.getTypeOfSymbolAtLocation(param, decl);
+    const modifiers = ts.getCombinedModifierFlags(decl);
+
+    return {
+      name: param.getName(),
+      modifiers,
+      type: reflectType(type),
+    }
+  }
+
+  function serializeConstructorSignature(sign: ts.Signature): Constructor {
+    const parameters = sign.getParameters().map(serializeConstructorParameter);
+    const decl = sign.getDeclaration()
+    const modifiers = decl ? ts.getCombinedModifierFlags(decl) : 0;
+
+    return {
+      parameters,
+      modifiers,
+    }
+  }
+
   function serializeObjectType(type: ts.ObjectType): ReflectedType {
     const symbol = type.getSymbol()!;
 
@@ -260,9 +283,13 @@ export function getReflect(ctx: Ctx) {
     ctx.checker.getPropertiesOfType(type) //setting declaredProperties
     const properties = type.declaredProperties.filter(sym => sym.flags & ts.SymbolFlags.Property).map(serializePropertySymbol)
 
+    const constructorType = ctx.checker.getTypeOfSymbolAtLocation(symbol, symbol.valueDeclaration!);
+    const constructors = constructorType.getConstructSignatures().map(serializeConstructorSignature);
+
     return {
       name: name!,
       properties,
+      constructors,
       kind: TypeKind.Class,
       extends: extendsCls
     };
