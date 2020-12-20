@@ -1,5 +1,5 @@
-import { Reflective, Types, getClassType } from "tsruntime";
-import { expectUnion } from "../utils";
+import {getClassType, Reflective, Types} from "tsruntime";
+import {expectUnion, initializerIsEqual} from "../utils";
 
 const { TypeKind } = Types;
 class GenericCls<T> {}
@@ -36,10 +36,6 @@ function getPropType(name: keyof DerrivedTypes) {
 function typeIsEqual(type: Types.ReflectedType, val: any) {
   const { initializer, ...otherType } = type;
   expect(otherType).toEqual(val);
-}
-function initializerIsEqual(type: Types.ReflectedType, val: any) {
-  expect(type.initializer).not.toBe(undefined);
-  expect(type.initializer!()).toEqual(val);
 }
 
 describe("class properties initializers", () => {
