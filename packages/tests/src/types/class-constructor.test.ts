@@ -1,4 +1,5 @@
 import {getClassType, Reflective, Types} from "tsruntime";
+import {initializerIsEqual} from "../utils";
 
 describe("Class Constructor", () => {
   it("contains parameters", () => {
@@ -131,7 +132,7 @@ describe("Class Constructor", () => {
       }
     }
     const type = getClassType(ClassWithOptionalParameters);
-    const initializer = type.constructors[0].parameters[0].type.initializer;
-    expect(initializer && initializer()).toEqual('str');
+    const paramType = type.constructors[0].parameters[0].type;
+    initializerIsEqual(paramType, 'str');
   });
 });
