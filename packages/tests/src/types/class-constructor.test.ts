@@ -130,4 +130,16 @@ describe("Class Constructor", () => {
       },
     ]);
   });
-})
+
+  it("supports initializer in parameters", () => {
+    @Reflective
+    class ClassWithOptionalParameters {
+      constructor(foo: string = 'str') {
+        console.log(foo);
+      }
+    }
+    const type = getClassType(ClassWithOptionalParameters);
+    const initializer = type.constructors[0].parameters[0].type.initializer;
+    expect(initializer && initializer()).toEqual('str');
+  });
+});

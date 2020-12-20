@@ -156,14 +156,21 @@ export function getReflect(ctx: Ctx) {
 
   function serializeConstructorParameter(param: ts.Symbol): ConstructorParameter {
     const decl = param.declarations[0];
-    const type = ctx.checker.getTypeOfSymbolAtLocation(param, decl);
+    const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
     const modifiers = ts.getCombinedModifierFlags(decl);
+
+    let initializer = undefined;
+    if (ts.isParameter(param.valueDeclaration)) {
+      if (param.valueDeclaration.initializer) {
+        initializer = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, param.valueDeclaration.initializer);
+      }
+    }
 
     return {
       name: param.getName(),
       modifiers,
-      type: reflectType(type),
-    }
+      type: {...type, initializer},
+    };
   }
 
   function serializeConstructorSignature(sign: ts.Signature): Constructor {
