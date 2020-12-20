@@ -137,4 +137,29 @@ describe("Class Constructor", () => {
     initializerIsEqual(params[0].type, 'str');
     initializerIsEqual(params[1].type, 123);
   });
+
+  it("supports spread parameters", () => {
+    @Reflective
+    class ClassWithSpreadParameter {
+      constructor(...rest: any[]) {
+        console.log(rest);
+      }
+    }
+    const type = getClassType(ClassWithSpreadParameter);
+
+    expect(type.constructors).toMatchObject([
+      {
+        parameters: [
+          {
+            name: "rest",
+            type: {
+              kind: Types.TypeKind.Reference,
+              type: Array,
+              arguments: [{ kind: Types.TypeKind.Any }],
+            },
+          },
+        ],
+      },
+    ]);
+  })
 });
