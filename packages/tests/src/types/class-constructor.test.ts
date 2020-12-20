@@ -38,19 +38,16 @@ describe("Class Constructor", () => {
     }
     const type = getClassType(ClassWithPropertyConstructor);
 
-    expect(type.constructors).toEqual([
+    expect(type.constructors).toMatchObject([
       {
-        modifiers: 0,
         parameters: [
           {
             name: "foo",
             modifiers: Types.ModifierFlags.Public,
-            type: {kind: Types.TypeKind.String},
           },
           {
             name: "bar",
             modifiers: Types.ModifierFlags.Private,
-            type: {kind: Types.TypeKind.Number},
           },
         ],
       },
@@ -66,23 +63,19 @@ describe("Class Constructor", () => {
     }
     const type = getClassType(ClassWithMultipleConstructors);
 
-    expect(type.constructors).toEqual([
+    expect(type.constructors).toMatchObject([
       {
-        modifiers: 0,
         parameters: [
           {
             name: "foo",
-            modifiers: 0,
             type: {kind: Types.TypeKind.String},
           },
         ],
       },
       {
-        modifiers: 0,
         parameters: [
           {
             name: "bar",
-            modifiers: 0,
             type: {kind: Types.TypeKind.Number},
           },
         ],
@@ -98,10 +91,9 @@ describe("Class Constructor", () => {
     }
     const type = getClassType(ClassWithPrivateConstructor);
 
-    expect(type.constructors).toEqual([
+    expect(type.constructors).toMatchObject([
       {
         modifiers: Types.ModifierFlags.Private,
-        parameters: [],
       },
     ]);
   });
@@ -109,17 +101,17 @@ describe("Class Constructor", () => {
   it("works with recursive parameters", () => {
     @Reflective
     class RecursiveClass {
-      constructor(public child: RecursiveClass) {}
+      constructor(child: RecursiveClass) {
+        console.log(child);
+      }
     }
     const type = getClassType(RecursiveClass);
 
-    expect(type.constructors).toEqual([
+    expect(type.constructors).toMatchObject([
       {
-        modifiers: 0,
         parameters: [
           {
             name: "child",
-            modifiers: Types.ModifierFlags.Public,
             type: {
               kind: Types.TypeKind.Reference,
               arguments: [],

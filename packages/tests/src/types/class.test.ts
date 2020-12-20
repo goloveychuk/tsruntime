@@ -31,7 +31,7 @@ describe("Class Decoration", () => {
   it("should decorate TestClass", () => {
     const type = getClassType(TestClass)
 
-    expect(type).toEqual({
+    expect(type).toMatchObject({
       name: "TestClass",
       kind: Types.TypeKind.Class,
       extends: {
@@ -44,39 +44,14 @@ describe("Class Decoration", () => {
         "str-str": { kind: Types.TypeKind.String },
         42: { kind: Types.TypeKind.String }
       },
-      constructors: [
-        {
-          modifiers: 0,
-          parameters: [
-            {
-              name: "arrayLength",
-              type: { kind: Types.TypeKind.Number },
-              modifiers: 0,
-            }
-          ]
-        },
-        {
-          modifiers: 0,
-          parameters: [
-            {
-              name: "items",
-              type: {
-                kind: Types.TypeKind.Reference,
-                type: Array,
-                arguments: [{ kind: Types.TypeKind.String }]
-              },
-              modifiers: 0,
-            }
-          ]
-        }
-      ],
+      constructors: {},
     });
   });
 
   it("should decorate TestClass2", () => {
     const type = getClassType(TestClass2)
 
-    expect(type).toEqual({
+    expect(type).toMatchObject({
       name: "TestClass2",
       kind: Types.TypeKind.Class,
       extends: {
@@ -87,32 +62,7 @@ describe("Class Decoration", () => {
       properties: {
         newProp: { kind: Types.TypeKind.String },
       },
-      constructors: [
-        {
-          modifiers: 0,
-          parameters: [
-            {
-              name: "arrayLength",
-              type: { kind: Types.TypeKind.Number },
-              modifiers: 0,
-            }
-          ]
-        },
-        {
-          modifiers: 0,
-          parameters: [
-            {
-              name: "items",
-              type: {
-                kind: Types.TypeKind.Reference,
-                type: Array,
-                arguments: [{ kind: Types.TypeKind.String }]
-              },
-              modifiers: 0,
-            }
-          ]
-        }
-      ]
+      constructors: {},
     });
   });
 
