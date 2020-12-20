@@ -1,12 +1,6 @@
 import * as ts from "typescript";
 import {ClassType, Constructor, ConstructorParameter, Ctx, ReflectedType, TypeKind} from "./types";
 
-function arrToObj<V>(arr: Array<[string, V]>) {
-  const res: { [key: string]: V } = {};
-  arr.forEach(([k, v]) => (res[k] = v));
-  return res;
-}
-
 namespace Normalizers {
   function normalizeBooleans(types: ReflectedType[]): ReflectedType[] {
     let hasFalse = false;
