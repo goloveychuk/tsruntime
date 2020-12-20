@@ -127,12 +127,14 @@ describe("Class Constructor", () => {
   it("supports initializer in parameters", () => {
     @Reflective
     class ClassWithOptionalParameters {
-      constructor(foo: string = 'str') {
-        console.log(foo);
+      constructor(foo: string = 'str', bar: number = 123) {
+        console.log(foo, bar);
       }
     }
     const type = getClassType(ClassWithOptionalParameters);
-    const paramType = type.constructors[0].parameters[0].type;
-    initializerIsEqual(paramType, 'str');
+    const params = type.constructors[0].parameters;
+
+    initializerIsEqual(params[0].type, 'str');
+    initializerIsEqual(params[1].type, 123);
   });
 });
