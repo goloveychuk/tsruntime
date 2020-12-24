@@ -88,10 +88,24 @@ export type ReferenceType = Override<
   }
 >;
 
+export interface ConstructorParameter {
+  name: string;
+  modifiers: ts.ModifierFlags;
+  type: ReflectedType;
+}
+
+export interface Constructor {
+  modifiers: ts.ModifierFlags;
+  parameters: ConstructorParameter[];
+}
+
+export type Constructors = Array<Constructor>;
+
 export type ClassType = Override<
   Types.ClassType,
   {
-    properties: Properties
+    properties: Properties,
+    constructors: Constructors,
     extends?: ReflectedType;
   }
 >;

@@ -35,6 +35,22 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
           type.properties.map(({name, type}) =>
             ts.createPropertyAssignment(getExpressionForPropertyName(name), makeLiteral(type))
         ))))
+        if (type.kind === TypeKind.Class) {
+          assigns.push(ts.createPropertyAssignment("constructors", ts.createArrayLiteral(
+            (type).constructors.map(({modifiers, parameters}) =>
+              ts.createObjectLiteral([
+                ts.createPropertyAssignment("modifiers", ts.createLiteral(modifiers)),
+                ts.createPropertyAssignment("parameters", ts.createArrayLiteral(
+                  parameters.map(({name, modifiers, type}) => ts.createObjectLiteral([
+                    ts.createPropertyAssignment("name", ts.createLiteral(name)),
+                    ts.createPropertyAssignment("modifiers", ts.createLiteral(modifiers)),
+                    ts.createPropertyAssignment("type", makeLiteral(type)),
+                  ]))
+                ))
+              ])
+            )
+          )))
+        }
         break
     }
     switch (type.kind) {

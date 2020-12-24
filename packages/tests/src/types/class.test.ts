@@ -28,10 +28,10 @@ class TestClass2 extends TestClass {
 
 
 describe("Class Decoration", () => {
-  it("should decorate cls", () => {
+  it("should decorate TestClass", () => {
     const type = getClassType(TestClass)
 
-    expect(type).toEqual({
+    expect(type).toMatchObject({
       name: "TestClass",
       kind: Types.TypeKind.Class,
       extends: {
@@ -43,14 +43,15 @@ describe("Class Decoration", () => {
         str: { kind: Types.TypeKind.String },
         "str-str": { kind: Types.TypeKind.String },
         42: { kind: Types.TypeKind.String }
-      }
+      },
+      constructors: {},
     });
   });
 
-  it("should decorate cls", () => {
+  it("should decorate TestClass2", () => {
     const type = getClassType(TestClass2)
 
-    expect(type).toEqual({
+    expect(type).toMatchObject({
       name: "TestClass2",
       kind: Types.TypeKind.Class,
       extends: {
@@ -60,7 +61,8 @@ describe("Class Decoration", () => {
       },
       properties: {
         newProp: { kind: Types.TypeKind.String },
-      }
+      },
+      constructors: {},
     });
   });
 
