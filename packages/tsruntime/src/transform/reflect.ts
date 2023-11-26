@@ -88,7 +88,7 @@ export function getReflect(ctx: Ctx) {
   function getIdentifierForSymbol(type: ts.Type): ts.Identifier {
     let name: string;
 
-    const typenode = ctx.checker.typeToTypeNode(type, ctx.node, undefined)!; //todo not sure
+    const typenode = ctx.checker.typeToTypeNode(type, ctx.node, undefined, undefined)!; //todo not sure
 
     switch (typenode.kind) {
       case ts.SyntaxKind.TypeReference:
@@ -105,7 +105,7 @@ export function getReflect(ctx: Ctx) {
       default:
         name = type.getSymbol()!.getName();
     }
-    const typeIdentifier = ts.createIdentifier(name);
+    const typeIdentifier = ts.factory.createIdentifier(name);
     (typeIdentifier as any).flags &= ~ts.NodeFlags.Synthesized;
     (typeIdentifier as any).parent = ctx.currentScope;
     return typeIdentifier;
@@ -117,7 +117,7 @@ export function getReflect(ctx: Ctx) {
       // if (!ts.isPropertySignature(valueDeclaration) && !ts.isPropertyDeclaration(valueDeclaration)) {
       // throw new Error("not prop signature");
       // }
-      return (valueDeclaration as ts.PropertyLikeDeclaration).name;
+      return (valueDeclaration as ts.PropertyDeclaration).name;
     }
     //@ts-ignore
     const nameType = symbol.nameType as ts.Type;
@@ -133,7 +133,7 @@ export function getReflect(ctx: Ctx) {
 
   function serializeInitializer(decl: {initializer?: ts.Expression}): ts.ArrowFunction | undefined {
     return decl.initializer
-      ? ts.createArrowFunction(undefined, undefined, [], undefined, undefined, decl.initializer)
+      ? ts.factory.createArrowFunction(undefined, undefined, [], undefined, undefined, decl.initializer)
       : undefined;
   }
 
@@ -154,7 +154,7 @@ export function getReflect(ctx: Ctx) {
     const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
     const modifiers = ts.getCombinedModifierFlags(decl);
 
-    const initializer = ts.isParameter(param.valueDeclaration!)
+    const initializer = param.valueDeclaration && ts.isParameter(param.valueDeclaration)
       ? serializeInitializer(param.valueDeclaration)
       : undefined;
 

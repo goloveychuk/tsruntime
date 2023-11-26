@@ -5,12 +5,12 @@
     "authors": "author",
     "version": "3.0.0-beta.1",
     "scripts": {
-        "build": "ttsc",
-        "tsnode": "ts-node --compiler=ttypescript src/index.ts"
+        "build": "tspc",
+        "tsnode": "ts-node --compiler=ts-patch/compiler src/index.ts"
     },
     "main": "pathToMain",
     "devDependencies": {
-        "ts-node": "8.1.0",
-        "ttypescript": "1.5.15"
+        "ts-node": "10.9.1",
+        "ts-patch": "3.0.2"
     }
 }
