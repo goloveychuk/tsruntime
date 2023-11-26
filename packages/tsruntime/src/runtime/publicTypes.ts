@@ -75,6 +75,7 @@ export type ReflectedType =
 
 export interface BaseType<TKind extends TypeKind, T> {
   kind: TKind;
+  modifiers?: ModifierFlags;
   initializer?: () => T;
 }
 

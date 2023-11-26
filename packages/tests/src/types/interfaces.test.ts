@@ -25,7 +25,7 @@ interface IExtends extends IExtended {
 }
 
 
-const stringType = {kind: Types.TypeKind.String}
+const stringType = {kind: Types.TypeKind.String, modifiers: Types.ModifierFlags.None}
 
 
 describe("interfaces", () => {
@@ -42,7 +42,7 @@ describe("interfaces", () => {
             [constKey]: stringType,
             ['computed-string']: stringType,
             [uniqSymb]: stringType,
-            method: {kind: Types.TypeKind.Function}
+            method: {kind: Types.TypeKind.Function, modifiers: Types.ModifierFlags.None}
         }
     });
   });
