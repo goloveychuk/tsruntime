@@ -88,7 +88,7 @@ export function getReflect(ctx: Ctx) {
   function getIdentifierForSymbol(type: ts.Type): ts.Identifier {
     let name: string;
 
-    const typenode = ctx.checker.typeToTypeNode(type, ctx.node)!; //todo not sure
+    const typenode = ctx.checker.typeToTypeNode(type, ctx.node, undefined)!; //todo not sure
 
     switch (typenode.kind) {
       case ts.SyntaxKind.TypeReference:
@@ -106,8 +106,8 @@ export function getReflect(ctx: Ctx) {
         name = type.getSymbol()!.getName();
     }
     const typeIdentifier = ts.createIdentifier(name);
-    typeIdentifier.flags &= ~ts.NodeFlags.Synthesized;
-    typeIdentifier.parent = ctx.currentScope;
+    (typeIdentifier as any).flags &= ~ts.NodeFlags.Synthesized;
+    (typeIdentifier as any).parent = ctx.currentScope;
     return typeIdentifier;
   }
 
@@ -142,19 +142,19 @@ export function getReflect(ctx: Ctx) {
     const serializedType = reflectType(type);
 
     const name = getPropertyName(sym);
-    const initializer = ts.isPropertyDeclaration(sym.valueDeclaration)
+    const initializer = ts.isPropertyDeclaration(sym.valueDeclaration!)
       ? serializeInitializer(sym.valueDeclaration)
       : undefined;
-      
+
     return { name: name, type: {...serializedType, initializer} };
   }
 
   function serializeConstructorParameter(param: ts.Symbol): ConstructorParameter {
-    const decl = param.declarations[0];
+    const decl = param.declarations![0];
     const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
     const modifiers = ts.getCombinedModifierFlags(decl);
 
-    const initializer = ts.isParameter(param.valueDeclaration)
+    const initializer = ts.isParameter(param.valueDeclaration!)
       ? serializeInitializer(param.valueDeclaration)
       : undefined;
 
@@ -182,7 +182,7 @@ export function getReflect(ctx: Ctx) {
     let properties = ctx.checker
       .getPropertiesOfType(type)
       .map(serializePropertySymbol);
-      
+
     let name;
     if (type.objectFlags & ts.ObjectFlags.Anonymous) {
       name = undefined;

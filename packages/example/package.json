@@ -11,6 +11,6 @@
     "main": "pathToMain",
     "devDependencies": {
         "ts-node": "8.1.0",
-        "ttypescript": "1.5.6"
+        "ttypescript": "1.5.15"
     }
 }
