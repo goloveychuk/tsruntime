@@ -21,5 +21,6 @@ jobs:
       - run: yarn build
       - run: yarn test
       - run: yarn publish
+        working-directory: './packages/tsruntime'
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
