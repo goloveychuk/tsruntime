@@ -88,7 +88,7 @@ export function getReflect(ctx: Ctx) {
   function getIdentifierForSymbol(type: ts.Type): ts.Identifier {
     let name: string;
 
-    const typenode = ctx.checker.typeToTypeNode(type, ctx.node, undefined, undefined)!; //todo not sure
+    const typenode = ctx.checker.typeToTypeNode(type, ctx.node, undefined)!; //todo not sure
 
     switch (typenode.kind) {
       case ts.SyntaxKind.TypeReference:
@@ -126,8 +126,8 @@ export function getReflect(ctx: Ctx) {
     if (nameSymb) {
       return nameSymb.valueDeclaration as any;
     } else {
-      //@ts-ignore
-      return ts.createLiteral(nameType.value);
+      //@ts-expect-error
+      return ts.factory.createLiteral(nameType.value);
     }
   }
 
