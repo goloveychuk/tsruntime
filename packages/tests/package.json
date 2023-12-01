@@ -21,6 +21,6 @@
   "homepage": "https://github.com/goloveychuk/tsruntime",
   "license": "MIT",
   "dependencies": {
-    "tsruntime": "^3.0.0-beta.1"
+    "tsruntime": "*"
   }
 }
