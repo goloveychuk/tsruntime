@@ -40,17 +40,17 @@ function typeIsEqual(type: Types.ReflectedType, val: any) {
 
 describe("class properties initializers", () => {
   it("primitive types", () => {
-    typeIsEqual(getPropType("string"), { kind: TypeKind.String });
+    typeIsEqual(getPropType("string"), { kind: TypeKind.String, modifiers: Types.ModifierFlags.None });
     initializerIsEqual(getPropType("string"), 'string');
-    typeIsEqual(getPropType("number"), { kind: TypeKind.Number });
+    typeIsEqual(getPropType("number"), { kind: TypeKind.Number, modifiers: Types.ModifierFlags.None  });
     initializerIsEqual(getPropType("number"), 42);
-    typeIsEqual(getPropType("true"), { kind: TypeKind.Boolean });
+    typeIsEqual(getPropType("true"), { kind: TypeKind.Boolean, modifiers: Types.ModifierFlags.None  });
     initializerIsEqual(getPropType("true"), true);
-    typeIsEqual(getPropType("false"), { kind: TypeKind.Boolean });
+    typeIsEqual(getPropType("false"), { kind: TypeKind.Boolean, modifiers: Types.ModifierFlags.None  });
     initializerIsEqual(getPropType("false"), false);
-    typeIsEqual(getPropType("null"), { kind: TypeKind.Null });
+    typeIsEqual(getPropType("null"), { kind: TypeKind.Null, modifiers: Types.ModifierFlags.None  });
     initializerIsEqual(getPropType("null"), null);
-    typeIsEqual(getPropType("undefined"), { kind: TypeKind.Undefined });
+    typeIsEqual(getPropType("undefined"), { kind: TypeKind.Undefined, modifiers: Types.ModifierFlags.None  });
     initializerIsEqual(getPropType("undefined"), undefined);
   });
   it("arrays", () => {
@@ -60,6 +60,7 @@ describe("class properties initializers", () => {
       typeIsEqual(type, {
         kind: TypeKind.Reference,
         type: Array,
+        modifiers: Types.ModifierFlags.None,
         arguments: [{ kind: TypeKind.String }]
       });
       initializerIsEqual(type, ["string"]);
@@ -71,6 +72,7 @@ describe("class properties initializers", () => {
     typeIsEqual(type, {
         kind: TypeKind.Reference,
         type: Cls,
+        modifiers: Types.ModifierFlags.None,
         arguments: []
       });
       expect(type.initializer).not.toBeUndefined()
@@ -82,6 +84,7 @@ describe("class properties initializers", () => {
     typeIsEqual(type, {
         kind: TypeKind.Reference,
         type: GenericCls,
+        modifiers: Types.ModifierFlags.None,
         arguments: [{ kind: Types.TypeKind.String }]
       });
       expect(type.initializer).not.toBeUndefined()

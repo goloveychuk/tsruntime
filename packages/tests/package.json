@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "test": "npm run build && jest --no-cache",
-    "build": "rimraf ./dist && ttsc"
+    "build": "rimraf ./dist && tspc"
   },
   "repository": {
     "type": "git",

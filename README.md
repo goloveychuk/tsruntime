@@ -8,13 +8,12 @@ Typescript custom transformer for emitting types for using in runtime (reflectio
 ## Motivation
 Sometimes you need types metadata in the runtime, e.g. to validate backend response or set `propTypes` from `interface Props{}` 
 
-It's docs for v3. For v2 go [here](https://github.com/goloveychuk/tsruntime/blob/596c10ecc31618effc598854bdb12ecd08e6dcc2/README.md)
 
 ## Prerequisites
-- `typescript: =>2.3.0`
+- `typescript: =>5.0.0`
 
 ## Setup
-- install `tsruntime` and `ttypescript`
+- install `tsruntime` and `ts-patch`
 - change `tsconfig.json`:
 ```js
 {
@@ -26,9 +25,9 @@ It's docs for v3. For v2 go [here](https://github.com/goloveychuk/tsruntime/blob
     }
 }
 ```
-- run with `ttypescript` compiler:
-  - `ts-node --compiler=ttypescript src/index.ts`
-  - `ttsc` 
+- run with `ts-patch` compiler:
+  - `ts-node --compiler=ts-patch/compiler src/index.ts`
+  - `tspc` 
   - change `compiler` in `awesome-typescript-loader` config
   - etc
 ### See [Example](./packages/example)

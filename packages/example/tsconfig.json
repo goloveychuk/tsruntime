@@ -8,8 +8,8 @@
         "sourceMap": false,
         "declaration": false,
         "plugins": [
-            { "transform": "tsruntime/transformer.js", "type": "program" },
-        ],
+            { "transform": "tsruntime/transformer.js", "type": "program" }
+        ]
     },
     "include": [
         "src/**/*"
