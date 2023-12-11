@@ -6,7 +6,7 @@ const constKey = "some-key";
 const uniqSymb = Symbol("some symb");
 
 
-const stringType = {kind: Types.TypeKind.String, modifiers: Types.ModifierFlags.None}
+const stringType = {kind: Types.TypeKind.String, modifiers: [Types.ModifierFlags.None]}
 
 type ObjectType = {
     key: string
