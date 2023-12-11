@@ -57,9 +57,9 @@ namespace Normalizers {
 
 export function getReflect(ctx: Ctx) {
   const accessModifiers = [
-    Types.ModifierFlags.Private,
-    Types.ModifierFlags.Protected,
-    Types.ModifierFlags.Public,
+    ts.ModifierFlags.Private,
+    ts.ModifierFlags.Protected,
+    ts.ModifierFlags.Public,
   ];
 
   function serializeUnion(type: ts.UnionType): ReflectedType {
@@ -149,12 +149,12 @@ export function getReflect(ctx: Ctx) {
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = reflectType(type);
     const modifiers = getModifiersFromDeclaration(decl, [
-      Types.ModifierFlags.Private,
-      Types.ModifierFlags.Protected,
-      Types.ModifierFlags.Public,
-      Types.ModifierFlags.Readonly,
-      Types.ModifierFlags.Static,
-      Types.ModifierFlags.Abstract,
+      ts.ModifierFlags.Private,
+      ts.ModifierFlags.Protected,
+      ts.ModifierFlags.Public,
+      ts.ModifierFlags.Readonly,
+      ts.ModifierFlags.Static,
+      ts.ModifierFlags.Abstract,
     ]);
 
     const name = getPropertyName(sym);
@@ -173,10 +173,10 @@ export function getReflect(ctx: Ctx) {
     const decl = param.declarations[0];
     const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
     const modifiers = getModifiersFromDeclaration(decl, [
-      Types.ModifierFlags.Private,
-      Types.ModifierFlags.Protected,
-      Types.ModifierFlags.Public,
-      Types.ModifierFlags.Readonly,
+      ts.ModifierFlags.Private,
+      ts.ModifierFlags.Protected,
+      ts.ModifierFlags.Public,
+      ts.ModifierFlags.Readonly,
     ]);
 
     const initializer = ts.isParameter(param.valueDeclaration)
@@ -247,14 +247,14 @@ export function getReflect(ctx: Ctx) {
     // return { kind: TypeKind.Unknown2 };
   }
 
-  function getModifiersFromDeclaration(decl: ts.Declaration, includesModifiers: Types.ModifierFlags[] = []) {
+  function getModifiersFromDeclaration(decl: ts.Declaration, includesModifiers: ts.ModifierFlags[] = []) {
     const modifierFlags = ts.getCombinedModifierFlags(decl);
     const modifiers = modifierFlags === 0
-      ? [Types.ModifierFlags.None]
+      ? [ts.ModifierFlags.None]
       : getModifiersByBruteForce(modifierFlags).filter(mod => includesModifiers.length === 0 || includesModifiers.includes(mod));
 
-    if (!modifiers.some(mod => accessModifiers.includes(mod)) && !modifiers.includes(Types.ModifierFlags.None)) {
-      modifiers.push(Types.ModifierFlags.None);
+    if (!modifiers.some(mod => accessModifiers.includes(mod)) && !modifiers.includes(ts.ModifierFlags.None)) {
+      modifiers.push(ts.ModifierFlags.None);
     }
     return modifiers.sort((a, b) => Number(a) - Number(b));
   }
@@ -262,9 +262,9 @@ export function getReflect(ctx: Ctx) {
   function getModifiersByBruteForce(modifierFlags: ts.ModifierFlags) {
     const modifiers = [];
     const modifiersToCheck = Object
-      .keys(Types.ModifierFlags)
+      .keys(ts.ModifierFlags)
       .filter(k => isNaN(Number(k)))
-      .map(k => Types.ModifierFlags[k as keyof typeof Types.ModifierFlags]);
+      .map(k => ts.ModifierFlags[k as keyof typeof ts.ModifierFlags]);
 
     for (const mod of modifiersToCheck) {
       if (modifierFlags & mod) {
