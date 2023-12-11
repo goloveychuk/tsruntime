@@ -55,6 +55,11 @@ namespace Normalizers {
 }
 
 export function getReflect(ctx: Ctx) {
+  const accessModifiers = [
+    ts.ModifierFlags.Private,
+    ts.ModifierFlags.Protected,
+    ts.ModifierFlags.Public,
+  ];
   function serializeUnion(type: ts.UnionType): ReflectedType {
     const nestedTypes = type.types.map(t => reflectType(t));
     const normalizedTypes = Normalizers.normalizeUnion(nestedTypes);
@@ -141,7 +146,15 @@ export function getReflect(ctx: Ctx) {
     const decl = sym.declarations![0];
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = reflectType(type);
-    const modifierFlags = ts.getCombinedModifierFlags(decl);
+    const modifiers = getModifiersFromDeclaration(decl, [
+      ts.ModifierFlags.Private,
+      ts.ModifierFlags.Protected,
+      ts.ModifierFlags.Public,
+      ts.ModifierFlags.Readonly,
+      ts.ModifierFlags.Override,
+      ts.ModifierFlags.Static,
+      ts.ModifierFlags.Abstract,
+    ]);
 
     const name = getPropertyName(sym);
     const initializer = ts.isPropertyDeclaration(sym.valueDeclaration!)
@@ -150,7 +163,7 @@ export function getReflect(ctx: Ctx) {
 
     return {
       name: name,
-      modifiers: modifierFlags,
+      modifiers,
       type: {...serializedType, initializer},
     };
   }
@@ -158,7 +171,13 @@ export function getReflect(ctx: Ctx) {
   function serializeConstructorParameter(param: ts.Symbol): ConstructorParameter {
     const decl = param.declarations![0];
     const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
-    const modifiers = ts.getCombinedModifierFlags(decl);
+    const modifiers = getModifiersFromDeclaration(decl, [
+      ts.ModifierFlags.Private,
+      ts.ModifierFlags.Protected,
+      ts.ModifierFlags.Public,
+      ts.ModifierFlags.Readonly,
+      ts.ModifierFlags.Override,
+    ]);
 
     const initializer = param.valueDeclaration && ts.isParameter(param.valueDeclaration)
       ? serializeInitializer(param.valueDeclaration)
@@ -226,6 +245,34 @@ export function getReflect(ctx: Ctx) {
     // }
     // ctx.reportUnknownType(type);
     // return { kind: TypeKind.Unknown2 };
+  }
+
+  function getModifiersFromDeclaration(decl: ts.Declaration, includesModifiers: ts.ModifierFlags[] = []) {
+    const modifierFlags = ts.getCombinedModifierFlags(decl);
+    const modifiers = modifierFlags === 0
+      ? [ts.ModifierFlags.None]
+      : getModifiersByBruteForce(modifierFlags).filter(mod => includesModifiers.length === 0 || includesModifiers.includes(mod));
+
+    if (!modifiers.some(mod => accessModifiers.includes(mod)) && !modifiers.includes(ts.ModifierFlags.None)) {
+      modifiers.push(ts.ModifierFlags.None);
+    }
+    return modifiers.sort((a, b) => Number(a) - Number(b));
+  }
+
+  function getModifiersByBruteForce(modifierFlags: ts.ModifierFlags) {
+    const modifiers = [];
+    const modifiersToCheck = Object
+      .keys(ts.ModifierFlags)
+      .filter(k => isNaN(Number(k)))
+      .map(k => ts.ModifierFlags[k as keyof typeof ts.ModifierFlags]);
+
+    for (const mod of modifiersToCheck) {
+      if (modifierFlags & mod) {
+        modifiers.push(mod);
+      }
+    }
+
+    return modifiers;
   }
 
   function reflectType(type: ts.Type): ReflectedType {

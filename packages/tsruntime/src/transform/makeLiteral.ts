@@ -15,7 +15,7 @@ function getExpressionForPropertyName(name: ts.PropertyName) { //copied from typ
 }
 
 
-export function makeLiteral(type: ReflectedType, modifier?: ts.ModifierFlags): ts.ObjectLiteralExpression {
+export function makeLiteral(type: ReflectedType, modifiers?: ts.ModifierFlags[]): ts.ObjectLiteralExpression {
     const assigns = []
     const kindAssign = ts.factory.createPropertyAssignment("kind", ts.factory.createNumericLiteral(type.kind))
     const kindAssignComment = ts.addSyntheticTrailingComment(kindAssign, ts.SyntaxKind.MultiLineCommentTrivia, TypeKind[type.kind], false)
@@ -25,8 +25,13 @@ export function makeLiteral(type: ReflectedType, modifier?: ts.ModifierFlags): t
       assigns.push(ts.factory.createPropertyAssignment("initializer", type.initializer))
     }
 
-    if (modifier !== undefined) {
-      assigns.push(ts.factory.createPropertyAssignment("modifiers", ts.factory.createNumericLiteral(modifier)));
+    if (Array.isArray(modifiers)) {
+      assigns.push(ts.factory.createPropertyAssignment(
+        "modifiers",
+        ts.factory.createArrayLiteralExpression(
+          modifiers.map(mod => ts.factory.createNumericLiteral(mod))
+        )
+      ));
     }
 
     switch (type.kind) {
@@ -54,7 +59,12 @@ export function makeLiteral(type: ReflectedType, modifier?: ts.ModifierFlags): t
                 ts.factory.createPropertyAssignment("parameters", ts.factory.createArrayLiteralExpression(
                   parameters.map(({name, modifiers, type}) => ts.factory.createObjectLiteralExpression([
                     ts.factory.createPropertyAssignment("name", ts.factory.createStringLiteral(name)),
-                    ts.factory.createPropertyAssignment("modifiers", ts.factory.createNumericLiteral(modifiers)),
+                    ts.factory.createPropertyAssignment(
+                      "modifiers",
+                        ts.factory.createArrayLiteralExpression(
+                          modifiers.map(mod => ts.factory.createNumericLiteral(mod))
+                        ),
+                      ),
                     ts.factory.createPropertyAssignment("type", makeLiteral(type)),
                   ]))
                 ))
