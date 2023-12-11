@@ -105,7 +105,7 @@ export function getReflect(ctx: Ctx) {
       default:
         name = type.getSymbol()!.getName();
     }
-    const typeIdentifier = ts.createIdentifier(name);
+    const typeIdentifier = ts.factory.createIdentifier(name);
     (typeIdentifier as any).flags &= ~ts.NodeFlags.Synthesized;
     (typeIdentifier as any).parent = ctx.currentScope;
     return typeIdentifier;
@@ -126,14 +126,14 @@ export function getReflect(ctx: Ctx) {
     if (nameSymb) {
       return nameSymb.valueDeclaration as any;
     } else {
-      //@ts-ignore
-      return ts.createLiteral(nameType.value);
+      //@ts-expect-error
+      return ts.factory.createLiteral(nameType.value);
     }
   }
 
   function serializeInitializer(decl: {initializer?: ts.Expression}): ts.ArrowFunction | undefined {
     return decl.initializer
-      ? ts.createArrowFunction(undefined, undefined, [], undefined, undefined, decl.initializer)
+      ? ts.factory.createArrowFunction(undefined, undefined, [], undefined, undefined, decl.initializer)
       : undefined;
   }
 
