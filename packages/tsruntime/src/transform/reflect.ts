@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import {ClassType, Constructor, ConstructorParameter, Ctx, ReflectedType, TypeKind} from "./types";
+import {Types} from "../runtime";
 
 namespace Normalizers {
   function normalizeBooleans(types: ReflectedType[]): ReflectedType[] {
@@ -55,6 +56,11 @@ namespace Normalizers {
 }
 
 export function getReflect(ctx: Ctx) {
+  const accessModifiers = [
+    Types.ModifierFlags.Private,
+    Types.ModifierFlags.Protected,
+    Types.ModifierFlags.Public,
+  ];
   function serializeUnion(type: ts.UnionType): ReflectedType {
     const nestedTypes = type.types.map(t => reflectType(t));
     const normalizedTypes = Normalizers.normalizeUnion(nestedTypes);
@@ -117,7 +123,7 @@ export function getReflect(ctx: Ctx) {
       // if (!ts.isPropertySignature(valueDeclaration) && !ts.isPropertyDeclaration(valueDeclaration)) {
       // throw new Error("not prop signature");
       // }
-      return (valueDeclaration as ts.PropertyLikeDeclaration).name;
+      return (valueDeclaration as ts.PropertyDeclaration).name;
     }
     //@ts-ignore
     const nameType = symbol.nameType as ts.Type;
@@ -138,23 +144,41 @@ export function getReflect(ctx: Ctx) {
   }
 
   function serializePropertySymbol(sym: ts.Symbol) {
+    const decl = sym.declarations![0];
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = reflectType(type);
+    const modifiers = getModifiersFromDeclaration(decl, [
+      Types.ModifierFlags.Private,
+      Types.ModifierFlags.Protected,
+      Types.ModifierFlags.Public,
+      Types.ModifierFlags.Readonly,
+      Types.ModifierFlags.Static,
+      Types.ModifierFlags.Abstract,
+    ]);
 
     const name = getPropertyName(sym);
     const initializer = ts.isPropertyDeclaration(sym.valueDeclaration!)
       ? serializeInitializer(sym.valueDeclaration)
       : undefined;
 
-    return { name: name, type: {...serializedType, initializer} };
+    return {
+      name: name,
+      modifiers,
+      type: {...serializedType, initializer},
+    };
   }
 
   function serializeConstructorParameter(param: ts.Symbol): ConstructorParameter {
     const decl = param.declarations![0];
     const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
-    const modifiers = ts.getCombinedModifierFlags(decl);
+    const modifiers = getModifiersFromDeclaration(decl, [
+      Types.ModifierFlags.Private,
+      Types.ModifierFlags.Protected,
+      Types.ModifierFlags.Public,
+      Types.ModifierFlags.Readonly,
+    ]);
 
-    const initializer = ts.isParameter(param.valueDeclaration!)
+    const initializer = param.valueDeclaration && ts.isParameter(param.valueDeclaration)
       ? serializeInitializer(param.valueDeclaration)
       : undefined;
 
@@ -220,6 +244,34 @@ export function getReflect(ctx: Ctx) {
     // }
     // ctx.reportUnknownType(type);
     // return { kind: TypeKind.Unknown2 };
+  }
+
+  function getModifiersFromDeclaration(decl: ts.Declaration, includesModifiers: Types.ModifierFlags[] = []) {
+    const modifierFlags = ts.getCombinedModifierFlags(decl);
+    const modifiers = modifierFlags === 0
+      ? [Types.ModifierFlags.None]
+      : getModifiersByBruteForce(modifierFlags).filter(mod => includesModifiers.length === 0 || includesModifiers.includes(mod));
+
+    if (!modifiers.some(mod => accessModifiers.includes(mod)) && !modifiers.includes(Types.ModifierFlags.None)) {
+      modifiers.push(Types.ModifierFlags.None);
+    }
+    return modifiers.sort((a, b) => Number(a) - Number(b));
+  }
+
+  function getModifiersByBruteForce(modifierFlags: ts.ModifierFlags) {
+    const modifiers = [];
+    const modifiersToCheck = Object
+      .keys(Types.ModifierFlags)
+      .filter(k => isNaN(Number(k)))
+      .map(k => Types.ModifierFlags[k as keyof typeof Types.ModifierFlags]);
+
+    for (const mod of modifiersToCheck) {
+      if (modifierFlags & mod) {
+        modifiers.push(mod);
+      }
+    }
+
+    return modifiers;
   }
 
   function reflectType(type: ts.Type): ReflectedType {

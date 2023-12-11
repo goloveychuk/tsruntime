@@ -15,13 +15,23 @@ function getExpressionForPropertyName(name: ts.PropertyName) { //copied from typ
 }
 
 
-export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
+export function makeLiteral(type: ReflectedType, modifiers?: ts.ModifierFlags[]): ts.ObjectLiteralExpression {
     const assigns = []
     const kindAssign = ts.factory.createPropertyAssignment("kind", ts.factory.createNumericLiteral(type.kind))
     const kindAssignComment = ts.addSyntheticTrailingComment(kindAssign, ts.SyntaxKind.MultiLineCommentTrivia, TypeKind[type.kind], false)
     assigns.push(kindAssignComment)
+
     if (type.initializer !== undefined) {
       assigns.push(ts.factory.createPropertyAssignment("initializer", type.initializer))
+    }
+
+    if (Array.isArray(modifiers)) {
+      assigns.push(ts.factory.createPropertyAssignment(
+        "modifiers",
+        ts.factory.createArrayLiteralExpression(
+          modifiers.map(mod => ts.factory.createNumericLiteral(mod))
+        )
+      ));
     }
 
     switch (type.kind) {
@@ -35,8 +45,8 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
           ts.factory.createPropertyAssignment(
             "properties",
             ts.factory.createObjectLiteralExpression(
-              type.properties.map(({name, type}) =>
-                ts.factory.createPropertyAssignment(getExpressionForPropertyName(name), makeLiteral(type))
+              type.properties.map(({name, type, modifiers}) =>
+                ts.factory.createPropertyAssignment(getExpressionForPropertyName(name), makeLiteral(type, modifiers))
               )
             )
           )
@@ -49,7 +59,12 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
                 ts.factory.createPropertyAssignment("parameters", ts.factory.createArrayLiteralExpression(
                   parameters.map(({name, modifiers, type}) => ts.factory.createObjectLiteralExpression([
                     ts.factory.createPropertyAssignment("name", ts.factory.createStringLiteral(name)),
-                    ts.factory.createPropertyAssignment("modifiers", ts.factory.createNumericLiteral(modifiers)),
+                    ts.factory.createPropertyAssignment(
+                      "modifiers",
+                        ts.factory.createArrayLiteralExpression(
+                          modifiers.map(mod => ts.factory.createNumericLiteral(mod))
+                        ),
+                      ),
                     ts.factory.createPropertyAssignment("type", makeLiteral(type)),
                   ]))
                 ))
@@ -62,10 +77,24 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
     switch (type.kind) {
 
       case TypeKind.Tuple:
-        assigns.push(ts.factory.createPropertyAssignment("elementTypes", ts.factory.createArrayLiteralExpression(type.elementTypes.map(makeLiteral))))
+        assigns.push(
+          ts.factory.createPropertyAssignment(
+            "elementTypes",
+            ts.factory.createArrayLiteralExpression(
+              type.elementTypes.map(el => makeLiteral(el))
+            )
+          )
+        );
         break
       case TypeKind.Union:
-        assigns.push(ts.factory.createPropertyAssignment("types", ts.factory.createArrayLiteralExpression(type.types.map(makeLiteral))))
+        assigns.push(
+          ts.factory.createPropertyAssignment(
+            "types",
+            ts.factory.createArrayLiteralExpression(
+              type.types.map(tp => makeLiteral(tp))
+            )
+          )
+        );
         break
       case TypeKind.StringLiteral:
         assigns.push(ts.factory.createPropertyAssignment('value', ts.factory.createStringLiteral(type.value)))
@@ -75,7 +104,14 @@ export function makeLiteral(type: ReflectedType): ts.ObjectLiteralExpression {
         break
       case TypeKind.Reference:
         assigns.push(ts.factory.createPropertyAssignment("type", type.type))
-        assigns.push(ts.factory.createPropertyAssignment("arguments", ts.factory.createArrayLiteralExpression(type.arguments.map(makeLiteral))))
+        assigns.push(
+          ts.factory.createPropertyAssignment(
+            "arguments",
+            ts.factory.createArrayLiteralExpression(
+              type.arguments.map(arg => makeLiteral(arg))
+            )
+          )
+        );
         break
       case TypeKind.Class:
         if (type.extends !== undefined) {
