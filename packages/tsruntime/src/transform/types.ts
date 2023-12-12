@@ -59,7 +59,7 @@ type Override2<T> = Override<T, {}>
 // type Override2<T, O> = T extends {[key: string]: infer R} ? {[key: string]: R extends Types.ReflectedType ? ReflectedType : R}: T
 
 
-type Properties = Array<{ name: ts.PropertyName; type: ReflectedType }>;
+type Properties = Array<{ name: ts.PropertyName; type: ReflectedType; modifiers: Types.ModifierFlags[] }>;
 export type ObjectType = Override<
   Types.ObjectType,
   {
@@ -90,7 +90,7 @@ export type ReferenceType = Override<
 
 export interface ConstructorParameter {
   name: string;
-  modifiers: ts.ModifierFlags;
+  modifiers: ts.ModifierFlags[];
   type: ReflectedType;
 }
 
