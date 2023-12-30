@@ -15,7 +15,7 @@ function getExpressionForPropertyName(name: ts.PropertyName) { //copied from typ
 }
 
 
-export function makeLiteral(type: ReflectedType, modifiers?: ts.ModifierFlags[]): ts.ObjectLiteralExpression {
+export function makeLiteral(type: ReflectedType, modifiers?: ts.ModifierFlags): ts.ObjectLiteralExpression {
     const assigns = []
     const kindAssign = ts.createPropertyAssignment("kind", ts.createLiteral(type.kind))
     const kindAssignComment = ts.addSyntheticTrailingComment(kindAssign, ts.SyntaxKind.MultiLineCommentTrivia, TypeKind[type.kind], false)
@@ -25,12 +25,10 @@ export function makeLiteral(type: ReflectedType, modifiers?: ts.ModifierFlags[])
       assigns.push(ts.createPropertyAssignment("initializer", type.initializer))
     }
 
-  if (Array.isArray(modifiers)) {
+  if (typeof modifiers !== 'undefined') {
     assigns.push(ts.createPropertyAssignment(
       "modifiers",
-      ts.createArrayLiteral(
-        modifiers.map(mod => ts.createLiteral(mod))
-      )
+      ts.createLiteral(modifiers)
     ));
   }
 
@@ -55,7 +53,7 @@ export function makeLiteral(type: ReflectedType, modifiers?: ts.ModifierFlags[])
                     ts.createPropertyAssignment("name", ts.createLiteral(name)),
                     ts.createPropertyAssignment(
                       "modifiers",
-                      ts.createArrayLiteral(modifiers.map(mod => ts.createLiteral(mod)))
+                      ts.createLiteral(modifiers)
                     ),
                     ts.createPropertyAssignment("type", makeLiteral(type)),
                   ]))
