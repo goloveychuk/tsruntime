@@ -1,4 +1,4 @@
-import {getClassType, Reflective, Types} from "tsruntime";
+import {getClassType, hasModifier, Reflective, Types} from "tsruntime";
 
 class Cls {
   f!: string;
@@ -25,19 +25,23 @@ abstract class SubCls extends Cls {
   }
 }
 
-function getPropModifier(name: string) {
+function getProperty(name: string) {
   const type = getClassType(SubCls);
-  return type.properties[name].modifiers;
+  return type.properties[name];
 }
 
 function matchModifiers(propName: string, expected: Types.ModifierFlags[]) {
-  expect({
-    name: propName,
-    modifiers: getPropModifier(propName)
-  }).toEqual({
-    name: propName,
-    modifiers: expected
-  });
+  for (const modifierFlag of expected) {
+    expect({
+      name: propName,
+      modifierFlag,
+      hasModifier: hasModifier(getProperty(propName) as any as {modifiers: number}, modifierFlag)
+    }).toEqual({
+      name: propName,
+      modifierFlag,
+      hasModifier: true
+    });
+  }
 }
 
 describe("class properties modifiers", () => {
@@ -46,10 +50,10 @@ describe("class properties modifiers", () => {
     matchModifiers("b", [Types.ModifierFlags.Public]);
     matchModifiers("c", [Types.ModifierFlags.Protected]);
     matchModifiers("d", [Types.ModifierFlags.Private]);
-    matchModifiers("e", [Types.ModifierFlags.None, Types.ModifierFlags.Readonly]);
-    matchModifiers("f", [Types.ModifierFlags.None, Types.ModifierFlags.Override]);
+    matchModifiers("e", [Types.ModifierFlags.Readonly]);
+    matchModifiers("f", [Types.ModifierFlags.Override]);
     matchModifiers("g", [Types.ModifierFlags.Protected, Types.ModifierFlags.Readonly, Types.ModifierFlags.Override]);
-    matchModifiers("h", [Types.ModifierFlags.None, Types.ModifierFlags.Abstract]);
+    matchModifiers("h", [Types.ModifierFlags.Abstract]);
     matchModifiers("i", [Types.ModifierFlags.Protected, Types.ModifierFlags.Abstract]);
     matchModifiers("j", [Types.ModifierFlags.Public, Types.ModifierFlags.Readonly]);
   });
