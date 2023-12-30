@@ -39,7 +39,7 @@ describe("transform", () => {
         exported: {
           kind: Types.TypeKind.Reference,
           type: ExportedClass,
-          modifiers: [Types.ModifierFlags.None],
+          modifiers: Types.ModifierFlags.None,
           arguments: []
         }
       },
@@ -71,7 +71,7 @@ describe("transform", () => {
       name: "TestClass",
       kind: Types.TypeKind.Class,
       properties: {
-        prop: { kind: Types.TypeKind.String, modifiers: [Types.ModifierFlags.None] }
+        prop: { kind: Types.TypeKind.String, modifiers: Types.ModifierFlags.None }
       },
       constructors: [{modifiers: 0, parameters: []}],
     });
