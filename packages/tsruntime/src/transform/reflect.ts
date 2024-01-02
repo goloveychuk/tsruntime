@@ -138,15 +138,21 @@ export function getReflect(ctx: Ctx) {
   }
 
   function serializePropertySymbol(sym: ts.Symbol) {
+    const decl = sym.declarations![0];
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = reflectType(type);
+    const modifiers = ts.getCombinedModifierFlags(decl);
 
     const name = getPropertyName(sym);
     const initializer = ts.isPropertyDeclaration(sym.valueDeclaration)
       ? serializeInitializer(sym.valueDeclaration)
       : undefined;
-      
-    return { name: name, type: {...serializedType, initializer} };
+
+    return {
+      name: name,
+      modifiers,
+      type: {...serializedType, initializer},
+    };
   }
 
   function serializeConstructorParameter(param: ts.Symbol): ConstructorParameter {
@@ -182,7 +188,7 @@ export function getReflect(ctx: Ctx) {
     let properties = ctx.checker
       .getPropertiesOfType(type)
       .map(serializePropertySymbol);
-      
+
     let name;
     if (type.objectFlags & ts.ObjectFlags.Anonymous) {
       name = undefined;
