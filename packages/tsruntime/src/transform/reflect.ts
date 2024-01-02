@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import {ClassType, Constructor, ConstructorParameter, Ctx, ReflectedType, TypeKind} from "./types";
+import {Types} from "../runtime";
 
 namespace Normalizers {
   function normalizeBooleans(types: ReflectedType[]): ReflectedType[] {
@@ -105,7 +106,7 @@ export function getReflect(ctx: Ctx) {
       default:
         name = type.getSymbol()!.getName();
     }
-    const typeIdentifier = ts.createIdentifier(name);
+    const typeIdentifier = ts.factory.createIdentifier(name);
     (typeIdentifier as any).flags &= ~ts.NodeFlags.Synthesized;
     (typeIdentifier as any).parent = ctx.currentScope;
     return typeIdentifier;
@@ -117,7 +118,7 @@ export function getReflect(ctx: Ctx) {
       // if (!ts.isPropertySignature(valueDeclaration) && !ts.isPropertyDeclaration(valueDeclaration)) {
       // throw new Error("not prop signature");
       // }
-      return (valueDeclaration as ts.PropertyLikeDeclaration).name;
+      return (valueDeclaration as ts.PropertyDeclaration).name;
     }
     //@ts-ignore
     const nameType = symbol.nameType as ts.Type;
@@ -126,27 +127,33 @@ export function getReflect(ctx: Ctx) {
     if (nameSymb) {
       return nameSymb.valueDeclaration as any;
     } else {
-      //@ts-ignore
-      return ts.createLiteral(nameType.value);
+      //@ts-expect-error
+      return ts.factory.createLiteral(nameType.value);
     }
   }
 
   function serializeInitializer(decl: {initializer?: ts.Expression}): ts.ArrowFunction | undefined {
     return decl.initializer
-      ? ts.createArrowFunction(undefined, undefined, [], undefined, undefined, decl.initializer)
+      ? ts.factory.createArrowFunction(undefined, undefined, [], undefined, undefined, decl.initializer)
       : undefined;
   }
 
   function serializePropertySymbol(sym: ts.Symbol) {
+    const decl = sym.declarations![0];
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = reflectType(type);
+    const modifiers = ts.getCombinedModifierFlags(decl);
 
     const name = getPropertyName(sym);
     const initializer = ts.isPropertyDeclaration(sym.valueDeclaration!)
       ? serializeInitializer(sym.valueDeclaration)
       : undefined;
 
-    return { name: name, type: {...serializedType, initializer} };
+    return {
+      name: name,
+      modifiers,
+      type: {...serializedType, initializer},
+    };
   }
 
   function serializeConstructorParameter(param: ts.Symbol): ConstructorParameter {
@@ -154,7 +161,7 @@ export function getReflect(ctx: Ctx) {
     const type = reflectType(ctx.checker.getTypeOfSymbolAtLocation(param, decl));
     const modifiers = ts.getCombinedModifierFlags(decl);
 
-    const initializer = ts.isParameter(param.valueDeclaration!)
+    const initializer = param.valueDeclaration && ts.isParameter(param.valueDeclaration)
       ? serializeInitializer(param.valueDeclaration)
       : undefined;
 

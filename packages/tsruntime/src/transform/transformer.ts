@@ -101,8 +101,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const reflectedType = getReflect(ctx).reflectType(type);
     const literal = makeLiteral(reflectedType);
 
-    const newExpression = ts.createCall(node.expression, undefined, [literal])
-    return ts.updateCall(node, newExpression, node.typeArguments, ts.visitNodes(node.arguments, visitor))
+    const newExpression = ts.factory.createCallExpression(node.expression, undefined, [literal])
+    return ts.factory.updateCallExpression(node, newExpression, node.typeArguments, ts.visitNodes(node.arguments, visitor))
   }
 
   function visitDecotaror(node: ts.Decorator) {
@@ -113,7 +113,7 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     const ctx = createContext(node)
 
     const classDeclaration = node.parent
-    
+
     const type = checker.getTypeAtLocation(classDeclaration);
 
     if (classDeclaration.kind !== ts.SyntaxKind.ClassDeclaration) {
@@ -125,8 +125,8 @@ function Transformer(program: ts.Program, context: ts.TransformationContext) {
     >type);
     const literal = makeLiteral(reflectedType);
 
-    const newExpression = ts.createCall(node.expression, undefined, [literal]);
-    return ts.updateDecorator(node, newExpression);
+    const newExpression = ts.factory.createCallExpression(node.expression, undefined, [literal]);
+    return ts.factory.updateDecorator(node, newExpression);
   }
 
   function onBeforeVisitNode(node: ts.Node) {
