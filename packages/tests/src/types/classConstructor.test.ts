@@ -17,12 +17,12 @@ describe("Class Constructor", () => {
         parameters: [
           {
             name: "foo",
-            modifiers: 0,
+            modifiers: Types.ModifierFlags.None,
             type: {kind: Types.TypeKind.String},
           },
           {
             name: "bar",
-            modifiers: 0,
+            modifiers: Types.ModifierFlags.None,
             type: {kind: Types.TypeKind.Number},
           },
         ],

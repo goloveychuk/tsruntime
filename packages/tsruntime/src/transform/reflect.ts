@@ -141,7 +141,7 @@ export function getReflect(ctx: Ctx) {
     const decl = sym.declarations![0];
     const type = ctx.checker.getTypeOfSymbolAtLocation(sym, ctx.node);
     const serializedType = reflectType(type);
-    const modifierFlags = ts.getCombinedModifierFlags(decl);
+    const modifiers = ts.getCombinedModifierFlags(decl);
 
     const name = getPropertyName(sym);
     const initializer = ts.isPropertyDeclaration(sym.valueDeclaration!)
@@ -150,7 +150,7 @@ export function getReflect(ctx: Ctx) {
 
     return {
       name: name,
-      modifiers: modifierFlags,
+      modifiers,
       type: {...serializedType, initializer},
     };
   }
