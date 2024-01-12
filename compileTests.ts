@@ -4,6 +4,8 @@ import * as ts from "typescript";
 import Transformer from '../src/transformer';
 
 
+
+
 function compile(fileNames: string[], options: ts.CompilerOptions): void {
     let program = ts.createProgram(fileNames, options);
 
